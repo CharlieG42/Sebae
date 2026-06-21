@@ -1,0 +1,38 @@
+[project]
+name    = "Sebae"
+version = "0.2.0"
+
+[tool.pyside6-project]
+files = [
+    "main.py",
+    "config.toml",
+    "backend/app_backend.py",
+    "backend/maint_backend.py",
+    "backend/biz_backend.py",
+    "core/hydraulics.py",
+    "core/pump.py",
+    "core/installation.py",
+    "core/graph.py",
+    "database/db.py",
+    "database/models.py",
+    "reports/print_report.py",
+    "qml/main.qml",
+    "qml/Modules/Common/Num.qml",
+    "qml/Modules/Common/Txt.qml",
+    "qml/Modules/Common/Combo.qml",
+    "qml/Modules/Common/Func.qml",
+    "qml/Modules/Common/DataTable.qml",
+    "qml/Windows/AdminWindow.qml",
+    "qml/Windows/NewEntry.qml",
+    "qml/Windows/OpenProject.qml",
+    "qml/Modules/Maintenance/MaintenanceWindow.qml",
+    "qml/Modules/Maintenance/ContractDetail.qml",
+    "qml/Modules/Maintenance/ClientDetail.qml",
+    "qml/Modules/Maintenance/ContactDetail.qml",
+    "qml/Modules/Maintenance/MachineDetail.qml",
+    "qml/Modules/Maintenance/ContractTypesSettings.qml",
+    "qml/Modules/Maintenance/StatusBadge.qml",
+    "qml/Modules/Biz/BizWindow.qml",
+    "qml/Modules/Biz/ProjectDetail.qml",
+    "qml/Modules/Biz/ArticleDetail.qml",
+]

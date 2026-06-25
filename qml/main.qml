@@ -7,6 +7,8 @@ import QtQuick.Controls.Material
 import "Modules/Common"
 import "Modules/Maintenance"
 import "Modules/Biz"
+import "Modules/Disinfection"
+import "Modules/WaterLift"
 import "Windows"
 
 ApplicationWindow {
@@ -184,8 +186,8 @@ ApplicationWindow {
                     Num { id: hours1;    label: "Heures / an :";       defaultValue: 2000; width: 200 }
                     Num { id: flowrate1; label: "Débit (m³/h) :";      width: 200 }
                     Num { id: head1;     label: "HMT (mce) :";         width: 200 }
-                    Num { id: pumpEff1;  label: "Rend. pompe (%) :";   width: 200 }
-                    Num { id: motorEff1; label: "Rend. moteur (%) :";  width: 200 }
+                    Num { id: pumpEff1;  label: "Rend. pompe (%):";   width: 200 }
+                    Num { id: motorEff1; label: "Rend. moteur (%):";  width: 200 }
                     Num { id: cost1;     label: "Coût (€) :";          defaultValue: 0; width: 200 }
                 }
             }
@@ -233,8 +235,8 @@ ApplicationWindow {
                     Num { id: hours2;    label: "Heures / an :";       defaultValue: 2000; width: 200 }
                     Num { id: flowrate2; label: "Débit (m³/h) :";      width: 200 }
                     Num { id: head2;     label: "HMT (mce) :";         width: 200 }
-                    Num { id: pumpEff2;  label: "Rend. pompe (%) :";   width: 200 }
-                    Num { id: motorEff2; label: "Rend. moteur (%) :";  width: 200 }
+                    Num { id: pumpEff2;  label: "Rend. pompe (%):";   width: 200 }
+                    Num { id: motorEff2; label: "Rend. moteur (%):";  width: 200 }
                     Num { id: cost2;     label: "Coût (€) :";          defaultValue: 0; width: 200 }
                 }
             }

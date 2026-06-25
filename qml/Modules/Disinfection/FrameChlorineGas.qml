@@ -1,7 +1,6 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Controls 1.5 as C1
-import QtQuick.Layouts 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
 GroupBox {
     id: grpBox
@@ -50,13 +49,13 @@ GroupBox {
                     Button { text: "?" }
 
                     Label { text: qsTr("Selected Qty Cylinders") }
-                    C1.SpinBox {
+                    SpinBox {
                         id: selectedQtyCylinders
                         Layout.fillWidth: true
                         Layout.minimumHeight: 32
-                        minimumValue: parseFloat(neededCylinders)
-                        maximumValue: 6
-                        decimals: 0
+                        from: 0
+                        to: 10000
+                        stepSize: 1
                     }
                     Button { text: "?" }
 

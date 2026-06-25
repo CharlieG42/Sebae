@@ -1,9 +1,8 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 1.5 as C1
-import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Window
+import QtQuick.Layouts
+import QtQuick.Dialogs
 
 import "../../Modules/Common" as Qml
 

@@ -1,7 +1,6 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Controls 1.5 as C1
-import QtQuick.Layouts 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
 GroupBox {
     title: qsTr("Dosing System")
@@ -28,20 +27,20 @@ GroupBox {
                 Button { text: "?" }
 
                 Label { text: qsTr("Max Flow Rate (g/h)") }
-                C1.SpinBox {
+                SpinBox {
                     Layout.fillWidth: true
-                    minimumValue: 0
-                    maximumValue: 10000
-                    decimals: 2
+                    from: 0
+                    to: 10000
+                    stepSize: 1
                 }
                 Button { text: "?" }
 
                 Label { text: qsTr("Number of Pumps") }
-                C1.SpinBox {
+                SpinBox {
                     Layout.fillWidth: true
-                    minimumValue: 1
-                    maximumValue: 10
-                    decimals: 0
+                    from: 0
+                    to: 10000
+                    stepSize: 10
                 }
                 Button { text: "?" }
             }

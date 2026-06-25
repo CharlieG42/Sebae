@@ -1,7 +1,6 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Controls 1.5 as C1
-import QtQuick.Layouts 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
 GroupBox {
     Layout.fillHeight: true
@@ -20,46 +19,46 @@ GroupBox {
         anchors.fill: parent
         columns: 3
         Label { text: qsTr("Min Water Flow (m3/h)") }
-        C1.SpinBox {
+        SpinBox {
             id: minWaterFlow
             Layout.fillWidth: true
             Layout.minimumHeight: 32
-            minimumValue: 0
-            maximumValue: 9999
-            decimals: 2
+            from: 0
+            to: 10000
+            stepSize: 1
         }
         Button { text: "?" }
 
         Label { text: qsTr("Max Water Flow (m3/h)") }
-        C1.SpinBox {
+        SpinBox {
             id: maxWaterFlow
             Layout.fillWidth: true
             Layout.minimumHeight: 32
-            minimumValue: 0
-            maximumValue: 9999
-            decimals: 2
+            from: 0
+            to: 10000
+            stepSize: 1
         }
         Button { text: "?" }
 
         Label { text: qsTr("Treatment rate (ppm)") }
-        C1.SpinBox {
+        SpinBox {
             id: treatmentRate
             Layout.fillWidth: true
             Layout.minimumHeight: 32
-            minimumValue: 0
-            maximumValue: 9999
-            decimals: 2
+            from: 0
+            to: 10000
+            stepSize: 1
         }
         Button { text: "?" }
 
         Label { text: qsTr("Treatment during by day (h)") }
-        C1.SpinBox {
+        SpinBox {
             id: treatmentDuring
             Layout.fillWidth: true
             Layout.minimumHeight: 32
-            minimumValue: 0
-            maximumValue: 9999
-            decimals: 2
+            from: 0
+            to: 10000
+            stepSize: 1
         }
         Button { text: "?" }
 

@@ -77,7 +77,7 @@ RowLayout {
                 Layout.fillWidth: true
                 from: 0
                 to: 10000
-                stepSize: 0.1
+                stepSize: 1
             }
             Button { text: "?" }
 
@@ -87,7 +87,7 @@ RowLayout {
                 Layout.fillWidth: true
                 from: 0
                 to: 10000
-                stepSize: 0.1
+                stepSize: 1
             }
             Button { text: "?" }
 
@@ -97,7 +97,7 @@ RowLayout {
                 Layout.fillWidth: true
                 from: 0
                 to: 10000
-                stepSize: 0.1
+                stepSize: 1
             }
             ComboBox {
                 id: _flowUnit

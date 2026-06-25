@@ -22,7 +22,7 @@ GroupBox {
             Layout.fillWidth: true
             from: 0
             to: 10000
-            stepSize: 0.1
+            stepSize: 1
         }
         Button { text: "?" }
 
@@ -40,7 +40,7 @@ GroupBox {
             Layout.fillWidth: true
             from: 0
             to: 10000
-            stepSize: 0.1
+            stepSize: 1
         }
         Button { text: "?" }
 

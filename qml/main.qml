@@ -101,14 +101,6 @@ ApplicationWindow {
         }
 
         Menu {
-            title: qsTr("&Projets")
-            Action {
-                text:        qsTr("&Gestion des projets...")
-                onTriggered: bizWindow.visible = true
-            }
-        }
-
-        Menu {
             title: qsTr("&Aide")
             Action {
                 text:        qsTr("&À propos")

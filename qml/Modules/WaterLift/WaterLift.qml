@@ -1,7 +1,7 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 1.5 as C1
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
 
 RowLayout {
     anchors.fill: parent
@@ -72,7 +72,7 @@ RowLayout {
         GridLayout {
             columns: 3
             Label { text: qsTr("Altitude (m)") }
-            C1.SpinBox {
+            SpinBox {
                 id: tn
                 Layout.fillWidth: true
                 minimumValue: -100
@@ -82,7 +82,7 @@ RowLayout {
             Button { text: "?" }
 
             Label { text: qsTr("Refoul Level (m)") }
-            C1.SpinBox {
+            SpinBox {
                 id: hg
                 Layout.fillWidth: true
                 minimumValue: 0
@@ -92,7 +92,7 @@ RowLayout {
             Button { text: "?" }
 
             Label { text: qsTr("Flow Rate") }
-            C1.SpinBox {
+            SpinBox {
                 id: flowRate
                 Layout.fillWidth: true
                 minimumValue: 0

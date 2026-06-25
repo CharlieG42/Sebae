@@ -32,6 +32,8 @@ ApplicationWindow {
     AdminWindow         { id: adminWindow;          visible: false }
     MaintenanceWindow   { id: maintenanceWindow;    visible: false }
     BizWindow           { id: bizWindow;            visible: false }  //Module pour les projets
+    WaterliftWindow     { id: waterliftWindow;             visible: false }
+    DisinfectionWindow  { id: disinfectionWindow;   visible: false }
 
     // --- Utilitaires QML ---
     Func { id: myFunctions }
@@ -71,6 +73,30 @@ ApplicationWindow {
             Action {
                 text:        qsTr("&Contrats d'entretien...")
                 onTriggered: maintenanceWindow.visible = true
+            }
+        }
+
+        Menu {
+            title: qsTr("&Projets")
+            Action {
+                text:        qsTr("&Gestion des projets...")
+                onTriggered: bizWindow.visible = true
+            }
+        }
+
+        Menu {
+            title: qsTr("&Stations de pompage EU")
+            Action {
+                text:        qsTr("&Dimensionnement Station de pompage...")
+                onTriggered: waterliftWindow.visible = true
+            }
+        }
+
+        Menu {
+            title: qsTr("&Désinfection")
+            Action {
+                text:        qsTr("&Dimensionnement d'unité de désinfection...")
+                onTriggered: disinfectionWindow.visible = true
             }
         }
 

@@ -4,12 +4,12 @@ import QtQuick.Layouts 1.15
 
 Window {
     id: waterliftWindow
-    title: "WaterLift"
+    title: "Pumping Station"
     width: 1024
     height: 768
     visible: false
     
-    WaterLift {
+   WaterLift {
         anchors.fill: parent
     }
 }

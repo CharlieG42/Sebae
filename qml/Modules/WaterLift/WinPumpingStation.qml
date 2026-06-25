@@ -1,7 +1,6 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Controls 1.5 as C1
-import QtQuick.Layouts 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
 GroupBox {
     title: qsTr("Pumping Station")
@@ -25,7 +24,7 @@ GroupBox {
         Button { text: "?" }
 
         Label { text: qsTr("Capacity (m3/h)") }
-        C1.SpinBox {
+        SpinBox {
             id: stationCapacity
             Layout.fillWidth: true
             minimumValue: 0
@@ -35,7 +34,7 @@ GroupBox {
         Button { text: "?" }
 
         Label { text: qsTr("Number of Pumps") }
-        C1.SpinBox {
+        SpinBox {
             id: stationPumpCount
             Layout.fillWidth: true
             minimumValue: 1

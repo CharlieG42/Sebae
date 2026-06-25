@@ -27,9 +27,9 @@ ApplicationWindow {
     // --- Fenêtres secondaires ---
     NewEntry            { id: newEntry;             visible: false }
     OpenProject         { id: openProject;          visible: false }
-    AdminWindow         { id: adminWindow;           visible: false }
-    MaintenanceWindow   { id: maintenanceWindow;     visible: false }
-    BizWindow           { id: bizWindow;             visible: false }
+    AdminWindow         { id: adminWindow;          visible: false }
+    MaintenanceWindow   { id: maintenanceWindow;    visible: false }
+    BizWindow           { id: bizWindow;            visible: false }  //Module pour les projets
 
     // --- Utilitaires QML ---
     Func { id: myFunctions }

@@ -75,9 +75,9 @@ RowLayout {
             SpinBox {
                 id: tn
                 Layout.fillWidth: true
-                minimumValue: -100
-                maximumValue: 5000
-                decimals: 0
+                from: 0
+                to: 10000
+                stepSize: 0.1
             }
             Button { text: "?" }
 
@@ -85,9 +85,9 @@ RowLayout {
             SpinBox {
                 id: hg
                 Layout.fillWidth: true
-                minimumValue: 0
-                maximumValue: 100
-                decimals: 2
+                from: 0
+                to: 10000
+                stepSize: 0.1
             }
             Button { text: "?" }
 
@@ -95,9 +95,9 @@ RowLayout {
             SpinBox {
                 id: flowRate
                 Layout.fillWidth: true
-                minimumValue: 0
-                maximumValue: 10000
-                decimals: 2
+                from: 0
+                to: 10000
+                stepSize: 0.1
             }
             ComboBox {
                 id: _flowUnit

@@ -18,22 +18,22 @@ GroupBox {
         Button { text: "?" }
 
         Label { text: qsTr("Diameter (mm)") }
-        C1.SpinBox {
+        SpinBox {
             id: accessDiameter
             Layout.fillWidth: true
-            minimumValue: 10
-            maximumValue: 2000
-            decimals: 0
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
 
         Label { text: qsTr("Length (m)") }
-        C1.SpinBox {
+        SpinBox {
             id: accessLength
             Layout.fillWidth: true
-            minimumValue: 0
-            maximumValue: 1000
-            decimals: 2
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
 
@@ -46,12 +46,12 @@ GroupBox {
         Button { text: "?" }
 
         Label { text: qsTr("Roughness (mm)") }
-        C1.SpinBox {
+        SpinBox {
             id: accessRoughness
             Layout.fillWidth: true
-            minimumValue: 0
-            maximumValue: 10
-            decimals: 3
+            from: 0
+            to: 10000
+            stepSize: 0.1
             value: 0.01
         }
         Button { text: "?" }

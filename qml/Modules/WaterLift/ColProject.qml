@@ -10,12 +10,12 @@ GroupBox {
         columns: 3
 
         Label { text: qsTr("Project Number") }
-        C1.SpinBox {
+        SpinBox {
             id: projectNo
             Layout.fillWidth: true
-            minimumValue: 1
-            maximumValue: 9999
-            decimals: 0
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
 

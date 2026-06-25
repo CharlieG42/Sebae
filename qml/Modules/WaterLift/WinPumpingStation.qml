@@ -27,9 +27,9 @@ GroupBox {
         SpinBox {
             id: stationCapacity
             Layout.fillWidth: true
-            minimumValue: 0
-            maximumValue: 10000
-            decimals: 2
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
 
@@ -37,9 +37,9 @@ GroupBox {
         SpinBox {
             id: stationPumpCount
             Layout.fillWidth: true
-            minimumValue: 1
-            maximumValue: 10
-            decimals: 0
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
 

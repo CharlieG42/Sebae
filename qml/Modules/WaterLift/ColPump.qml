@@ -25,42 +25,42 @@ GroupBox {
         Button { text: "?" }
 
         Label { text: qsTr("Flow Rate (m3/h)") }
-        C1.SpinBox {
+        SpinBox {
             id: pumpFlowRate
             Layout.fillWidth: true
-            minimumValue: 0
-            maximumValue: 10000
-            decimals: 2
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
 
         Label { text: qsTr("Head (m)") }
-        C1.SpinBox {
+        SpinBox {
             id: pumpHead
             Layout.fillWidth: true
-            minimumValue: 0
-            maximumValue: 200
-            decimals: 2
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
 
         Label { text: qsTr("Power (kW)") }
-        C1.SpinBox {
+        SpinBox {
             id: pumpPower
             Layout.fillWidth: true
-            minimumValue: 0
-            maximumValue: 500
-            decimals: 2
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
 
         Label { text: qsTr("Efficiency (%)") }
-        C1.SpinBox {
+        SpinBox {
             id: pumpEfficiency
             Layout.fillWidth: true
-            minimumValue: 0
-            maximumValue: 100
-            decimals: 1
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
     }

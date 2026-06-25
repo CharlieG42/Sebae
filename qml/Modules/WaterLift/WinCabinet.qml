@@ -20,9 +20,9 @@ GroupBox {
         SpinBox {
             id: cabinetPower
             Layout.fillWidth: true
-            minimumValue: 0
-            maximumValue: 500
-            decimals: 2
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
 
@@ -38,9 +38,9 @@ GroupBox {
         SpinBox {
             id: cabinetCurrent
             Layout.fillWidth: true
-            minimumValue: 0
-            maximumValue: 1000
-            decimals: 1
+            from: 0
+            to: 10000
+            stepSize: 0.1
         }
         Button { text: "?" }
 

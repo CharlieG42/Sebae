@@ -9,6 +9,8 @@ import '../services/ssdm_service.dart';
 final _eur = NumberFormat.currency(locale: 'fr_FR', symbol: 'EUR');
 
 /// Sales Plan de l'année : objectifs de CA par IV x groupe x type de clients.
+///
+/// Chaque axe accepte également la valeur "Tous" (ligne globale).
 class PlanView extends StatelessWidget {
   const PlanView({super.key});
 
@@ -36,18 +38,25 @@ class PlanView extends StatelessWidget {
       );
     }
 
-    // Regroupement par IV.
+    // Regroupement par IV (les lignes "Tous" forment leur propre section).
     final byIv = <String, List<SalesPlanEntry>>{};
     for (final e in entries) {
       byIv.putIfAbsent(e.ivId, () => []).add(e);
     }
+    final ivKeys = byIv.keys.toList()
+      ..sort((a, b) {
+        // Section "Tous" en dernier.
+        if (a == kAllId) return 1;
+        if (b == kAllId) return -1;
+        return service.ivLabel(a).compareTo(service.ivLabel(b));
+      });
 
     return Stack(
       children: [
         ListView(
           padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16, top: 16),
           children: [
-            for (final ivId in byIv.keys)
+            for (final ivId in ivKeys)
               ..._ivSection(context, service, ivId, byIv[ivId]!),
             const Divider(height: 32),
             Row(
@@ -86,15 +95,18 @@ class PlanView extends StatelessWidget {
     String ivId,
     List<SalesPlanEntry> entries,
   ) {
-    final iv = service.ivOf(ivId);
     final ivTotal = entries.fold(0.0, (sum, e) => sum + e.targetAmount);
     return [
       Padding(
         padding: const EdgeInsets.only(top: 8, bottom: 4),
         child: Row(
           children: [
-            Expanded(child: Text(iv?.name ?? 'IV inconnu',
-                style: Theme.of(context).textTheme.titleMedium)),
+            Expanded(
+              child: Text(
+                service.ivLabel(ivId),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
             Text(_eur.format(ivTotal),
                 style: Theme.of(context).textTheme.titleSmall),
           ],
@@ -106,8 +118,12 @@ class PlanView extends StatelessWidget {
             for (final e in entries)
               ListTile(
                 title: Text(
-                  '${service.groupOf(e.clientGroupId)?.name ?? '?'} - '
-                  '${service.typeOf(e.clientTypeId)?.name ?? '?'}',
+                  '${service.groupLabel(e.clientGroupId)} - '
+                  '${service.typeLabel(e.clientTypeId)}',
+                ),
+                subtitle: Text(
+                  'Cible : ${_eur.format(e.targetAmount)}'
+                  '${e.realizedAmount > 0 ? ' - Réalisé : ${_eur.format(e.realizedAmount)}' : ''}',
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -131,7 +147,9 @@ class PlanView extends StatelessWidget {
   }
 }
 
-/// Dialogue de creation / modification d'une ligne de plan.
+/// Dialogue de création / modification d'une ligne de plan.
+///
+/// Chaque axe propose en première position l'option "Tous" (ligne globale).
 Future<void> showPlanEntryDialog(
   BuildContext context, {
   SalesPlanEntry? entry,
@@ -194,9 +212,9 @@ class _PlanEntryDialogState extends State<_PlanEntryDialog> {
   void initState() {
     super.initState();
     final e = widget.entry;
-    _ivId = e?.ivId ?? widget.service.ivs.first.id;
-    _groupId = e?.clientGroupId ?? widget.service.clientGroups.first.id;
-    _typeId = e?.clientTypeId ?? widget.service.clientTypes.first.id;
+    _ivId = e?.ivId ?? kAllId;
+    _groupId = e?.clientGroupId ?? kAllId;
+    _typeId = e?.clientTypeId ?? kAllId;
     _amount = TextEditingController(
       text: e == null ? '' : e.targetAmount.toStringAsFixed(0),
     );
@@ -237,18 +255,22 @@ class _PlanEntryDialogState extends State<_PlanEntryDialog> {
         children: [
           DropdownButtonFormField<String>(
             initialValue: _ivId,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'IV'),
             items: [
+              const DropdownMenuItem(value: kAllId, child: Text('Tous')),
               for (final iv in service.ivs)
-                DropdownMenuItem(value: iv.id, child: Text(iv.name)),
+                DropdownMenuItem(value: iv.id, child: Text(iv.trigram.isEmpty ? iv.name : '${iv.trigram} - ${iv.name}')),
             ],
             onChanged: (v) => setState(() => _ivId = v ?? _ivId),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _groupId,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Groupe de clients'),
             items: [
+              const DropdownMenuItem(value: kAllId, child: Text('Tous')),
               for (final g in service.clientGroups)
                 DropdownMenuItem(value: g.id, child: Text(g.name)),
             ],
@@ -257,8 +279,10 @@ class _PlanEntryDialogState extends State<_PlanEntryDialog> {
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _typeId,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Type de clients'),
             items: [
+              const DropdownMenuItem(value: kAllId, child: Text('Tous')),
               for (final t in service.clientTypes)
                 DropdownMenuItem(value: t.id, child: Text(t.name)),
             ],

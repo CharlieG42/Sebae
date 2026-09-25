@@ -10,6 +10,9 @@ import '../models/sales_action.dart';
 import '../models/sales_plan_entry.dart';
 import '../models/ssdm_year.dart';
 
+/// Sentinel signifiant "Tous" sur un axe du Sales Plan.
+const kAllId = 'all';
+
 /// Service central du module SSDM.
 ///
 /// Expose les années, le Sales Plan et les actions de l'année sélectionnée,
@@ -52,9 +55,51 @@ class SsdmService extends ChangeNotifier {
   List<ClientType> get clientTypes => _types.values.toList()
     ..sort((a, b) => a.name.compareTo(b.name));
 
-  Iv? ivOf(String? id) => id == null ? null : _ivs.get(id);
-  ClientGroup? groupOf(String? id) => id == null ? null : _groups.get(id);
-  ClientType? typeOf(String? id) => id == null ? null : _types.get(id);
+  // --------------------------------------------- Résolution des références ---
+  // Les entités partagées sont référencées par leur champ `id` (UUID).
+  // On ne peut pas utiliser box.get(id) car la clé Hive peut différer
+  // (anciennes données créées avec box.add), donc on scanne les valeurs.
+
+  Iv? ivOf(String? id) {
+    if (id == null || id == kAllId) return null;
+    for (final iv in _ivs.values) {
+      if (iv.id == id) return iv;
+    }
+    return null;
+  }
+
+  ClientGroup? groupOf(String? id) {
+    if (id == null || id == kAllId) return null;
+    for (final g in _groups.values) {
+      if (g.id == id) return g;
+    }
+    return null;
+  }
+
+  ClientType? typeOf(String? id) {
+    if (id == null || id == kAllId) return null;
+    for (final t in _types.values) {
+      if (t.id == id) return t;
+    }
+    return null;
+  }
+
+  /// Libellé IV : trigramme + nom, "Tous" pour la sentinel, "?" si inconnu.
+  String ivLabel(String? id) {
+    if (id == null) return 'Équipe';
+    if (id == kAllId) return 'Tous';
+    final iv = ivOf(id);
+    if (iv == null) return '?';
+    return iv.trigram.isEmpty ? iv.name : '${iv.trigram} - ${iv.name}';
+  }
+
+  /// Libellé groupe de clients ("Tous" pour la sentinel).
+  String groupLabel(String? id) =>
+      id == kAllId ? 'Tous' : (groupOf(id)?.name ?? '?');
+
+  /// Libellé type de clients ("Tous" pour la sentinel).
+  String typeLabel(String? id) =>
+      id == kAllId ? 'Tous' : (typeOf(id)?.name ?? '?');
 
   void selectYear(int? year) {
     _selectedYear = year;
@@ -128,18 +173,21 @@ class SsdmService extends ChangeNotifier {
       .fold(0.0, (sum, e) => sum + e.realizedAmount);
 
   /// Total du Sales Plan par IV pour une année.
+  ///
+  /// Les lignes "Tous les IV" (sentinel [kAllId]) sont exclues de ce
+  /// découpage (elles restent comptées dans [planTotal]).
   Map<String, double> planByIv(int year) {
     final result = <String, double>{};
-    for (final e in _plan.values.where((e) => e.year == year)) {
+    for (final e in _plan.values.where((e) => e.year == year && e.ivId != kAllId)) {
       result[e.ivId] = (result[e.ivId] ?? 0) + e.targetAmount;
     }
     return result;
   }
 
-  /// CA réalisé par IV pour une année.
+  /// CA réalisé par IV pour une année (hors lignes "Tous les IV").
   Map<String, double> realizedByIv(int year) {
     final result = <String, double>{};
-    for (final e in _plan.values.where((e) => e.year == year)) {
+    for (final e in _plan.values.where((e) => e.year == year && e.ivId != kAllId)) {
       result[e.ivId] = (result[e.ivId] ?? 0) + e.realizedAmount;
     }
     return result;
@@ -153,14 +201,15 @@ class SsdmService extends ChangeNotifier {
   }) async {
     final year = _selectedYear;
     if (year == null) return;
-    await _plan.add(SalesPlanEntry(
+    final entry = SalesPlanEntry(
       id: _uuid.v4(),
       year: year,
       ivId: ivId,
       clientGroupId: clientGroupId,
       clientTypeId: clientTypeId,
       targetAmount: targetAmount,
-    ));
+    );
+    await _plan.put(entry.id, entry);
     notifyListeners();
   }
 
@@ -192,6 +241,15 @@ class SsdmService extends ChangeNotifier {
           return da.compareTo(db);
         });
 
+  /// Retrouve une action par son id (indépendamment de la clé de box).
+  SalesAction? actionOf(String? id) {
+    if (id == null) return null;
+    for (final a in _actions.values) {
+      if (a.id == id) return a;
+    }
+    return null;
+  }
+
   Future<void> addAction({
     required String title,
     String description = '',
@@ -202,7 +260,7 @@ class SsdmService extends ChangeNotifier {
   }) async {
     final year = _selectedYear;
     if (year == null) return;
-    await _actions.add(SalesAction(
+    final action = SalesAction(
       id: _uuid.v4(),
       year: year,
       title: title,
@@ -211,7 +269,8 @@ class SsdmService extends ChangeNotifier {
       clientGroupId: clientGroupId,
       clientTypeId: clientTypeId,
       dueDate: dueDate,
-    ));
+    );
+    await _actions.put(action.id, action);
     notifyListeners();
   }
 

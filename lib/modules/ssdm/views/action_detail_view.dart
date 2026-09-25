@@ -7,7 +7,7 @@ import '../services/ssdm_service.dart';
 
 final _dateFmt = DateFormat('dd/MM/yyyy HH:mm');
 
-/// Detail d'une action : mise à jour de l'avancement et historique.
+/// Détail d'une action : mise à jour de l'avancement et historique.
 class ActionDetailView extends StatelessWidget {
   const ActionDetailView({super.key, required this.actionId});
 
@@ -16,16 +16,13 @@ class ActionDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final service = context.watch<SsdmService>();
-    final action = service.actionsFor(null)
-        .firstWhere((a) => a.id == actionId, orElse: () => _placeholder);
-    if (action == _placeholder) {
+    final action = service.actionOf(actionId);
+    if (action == null) {
       // Action supprimée : retour.
       WidgetsBinding.instance
           .addPostFrameCallback((_) => Navigator.of(context).maybePop());
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
-    final iv = service.ivOf(action.ivId);
 
     return Scaffold(
       appBar: AppBar(
@@ -63,7 +60,7 @@ class ActionDetailView extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            '${iv?.name ?? 'Équipe'} - ${action.status.label}',
+            '${service.ivLabel(action.ivId)} - ${action.status.label}',
             style: Theme.of(context).textTheme.titleSmall,
           ),
           if (action.dueDate != null)
@@ -164,5 +161,3 @@ class _ProgressSectionState extends State<_ProgressSection> {
     );
   }
 }
-
-final _placeholder = SalesAction(id: '', year: 0, title: '');

@@ -29,7 +29,7 @@ class DashboardView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // --- Cartes de synthese ---
+        // --- Cartes de synthèse ---
         Row(
           children: [
             Expanded(
@@ -118,11 +118,10 @@ class DashboardView extends StatelessWidget {
           Text('Avancement des actions', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           ...actions.take(10).map((a) {
-            final iv = service.ivOf(a.ivId);
             return ListTile(
               leading: _StatusDot(progress: a.progress),
               title: Text(a.title),
-              subtitle: Text(iv?.name ?? 'Équipe'),
+              subtitle: Text(service.ivLabel(a.ivId)),
               trailing: Text('${a.progress} %'),
             );
           }),
@@ -131,8 +130,6 @@ class DashboardView extends StatelessWidget {
     );
   }
 }
-
-// Extensions utilitaires locales ------------------------------
 
 class _MetricCard extends StatelessWidget {
   const _MetricCard({required this.label, required this.value, this.subtitle});
@@ -202,8 +199,6 @@ class _PlanByIvChart extends StatelessWidget {
   final SsdmService service;
   final int year;
 
-  static const _barSpacing = 16.0;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -215,7 +210,7 @@ class _PlanByIvChart extends StatelessWidget {
       for (var i = 0; i < ivs.length; i++)
         BarChartGroupData(
           x: i,
-          barsSpace: _barSpacing / 2,
+          barsSpace: 8,
           barRods: [
             BarChartRodData(
               toY: planByIv[ivs[i].id] ?? 0,
@@ -248,7 +243,7 @@ class _PlanByIvChart extends StatelessWidget {
                   SideTitleWidget(
                     axisSide: meta.axisSide,
                     child: Text(
-                      ivs[value.toInt()].name,
+                      ivs[value.toInt()].shortLabel,
                       style: const TextStyle(fontSize: 11),
                     ),
                   ),

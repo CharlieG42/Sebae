@@ -11,6 +11,10 @@ import '../shared/models/iv.dart';
 ///
 /// Les entités définies ici (IV, groupes et types de clients) sont communes
 /// à tous les modules Sebae et, à terme, aux outils intégrés comme WUECT.
+///
+/// Convention importante : les entités sont stockées avec leur UUID comme
+/// clé Hive (`box.put(id, ...)`), jamais avec la clé auto-incrémentée,
+/// afin que les références croisées (Sales Plan, actions...) fonctionnent.
 class DataHome extends StatelessWidget {
   const DataHome({super.key});
 
@@ -69,9 +73,13 @@ class _IvTab extends StatelessWidget {
             children: [
               for (final iv in items)
                 ListTile(
-                  leading: CircleAvatar(child: Text(iv.name.isNotEmpty ? iv.name[0] : '?')),
+                  leading: CircleAvatar(child: Text(iv.shortLabel)),
                   title: Text(iv.name),
-                  subtitle: Text(iv.active ? 'Actif' : 'Inactif'),
+                  subtitle: Text(
+                    iv.trigram.isEmpty
+                        ? (iv.active ? 'Actif' : 'Inactif')
+                        : 'Trigramme : ${iv.trigram} - ${iv.active ? 'Actif' : 'Inactif'}',
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -104,15 +112,32 @@ class _IvTab extends StatelessWidget {
 Future<void> showIvDialog(BuildContext context, {Iv? iv}) async {
   const uuid = Uuid();
   final box = Hive.box<Iv>(BoxNames.ivs);
-  final controller = TextEditingController(text: iv?.name ?? '');
+  final nameController = TextEditingController(text: iv?.name ?? '');
+  final trigramController = TextEditingController(text: iv?.trigram ?? '');
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(iv == null ? 'Nouveau IV' : 'Modifier l\'IV'),
-      content: TextField(
-        controller: controller,
-        autofocus: true,
-        decoration: const InputDecoration(labelText: 'Nom'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: nameController,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Nom'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: trigramController,
+            maxLength: 3,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              labelText: 'Trigramme (convention société)',
+              hintText: 'ex. DBA',
+              counterText: '',
+            ),
+          ),
+        ],
       ),
       actions: [
         TextButton(
@@ -126,15 +151,23 @@ Future<void> showIvDialog(BuildContext context, {Iv? iv}) async {
       ],
     ),
   );
-  if (confirmed == true && controller.text.trim().isNotEmpty) {
+  if (confirmed == true && nameController.text.trim().isNotEmpty) {
+    final trigram = trigramController.text.trim().toUpperCase();
     if (iv == null) {
-      await box.add(Iv(id: uuid.v4(), name: controller.text.trim()));
+      final newIv = Iv(
+        id: uuid.v4(),
+        name: nameController.text.trim(),
+        trigram: trigram,
+      );
+      await box.put(newIv.id, newIv);
     } else {
-      iv.name = controller.text.trim();
+      iv.name = nameController.text.trim();
+      iv.trigram = trigram;
       await iv.save();
     }
   }
-  controller.dispose();
+  nameController.dispose();
+  trigramController.dispose();
 }
 
 // ---------------------------------------------------------- Groupes clients ---
@@ -226,11 +259,12 @@ Future<void> showClientGroupDialog(BuildContext context, {ClientGroup? group}) a
   );
   if (confirmed == true && nameController.text.trim().isNotEmpty) {
     if (group == null) {
-      await box.add(ClientGroup(
+      final newGroup = ClientGroup(
         id: uuid.v4(),
         name: nameController.text.trim(),
         description: descController.text.trim(),
-      ));
+      );
+      await box.put(newGroup.id, newGroup);
     } else {
       group.name = nameController.text.trim();
       group.description = descController.text.trim();
@@ -318,7 +352,8 @@ Future<void> showClientTypeDialog(BuildContext context, {ClientType? type}) asyn
   );
   if (confirmed == true && controller.text.trim().isNotEmpty) {
     if (type == null) {
-      await box.add(ClientType(id: uuid.v4(), name: controller.text.trim()));
+      final newType = ClientType(id: uuid.v4(), name: controller.text.trim());
+      await box.put(newType.id, newType);
     } else {
       type.name = controller.text.trim();
       await type.save();

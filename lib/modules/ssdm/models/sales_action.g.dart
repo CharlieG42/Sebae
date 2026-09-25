@@ -28,7 +28,7 @@ class SalesActionAdapter extends TypeAdapter<SalesAction> {
       progress: fields[8] as int,
       dueDate: fields[9] as DateTime?,
       createdAt: fields[10] as DateTime?,
-      history: (fields[11] as List?)?.cast<InvalidType>(),
+      history: (fields[11] as List?)?.cast<ActionUpdate>(),
     );
   }
 

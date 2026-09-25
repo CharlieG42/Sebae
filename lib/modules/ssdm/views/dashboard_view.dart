@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/sales_action.dart';
 import '../services/ssdm_service.dart';
+import 'create_year_dialog.dart';
 
 final _eur = NumberFormat.compactCurrency(locale: 'fr_FR', symbol: 'EUR');
 
@@ -26,107 +27,115 @@ class DashboardView extends StatelessWidget {
     final avgProgress = service.averageProgress(year);
     final actions = service.actionsFor(year);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // --- Cartes de synthèse ---
-        Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                label: 'Objectif CA',
-                value: _eur.format(objective),
+    return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fabNewYearDashboard',
+        onPressed: () => showCreateYearDialog(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Nouvelle année'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // --- Cartes de synthèse ---
+          Row(
+            children: [
+              Expanded(
+                child: _MetricCard(
+                  label: 'Objectif CA',
+                  value: _eur.format(objective),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricCard(
-                label: 'Sales Plan',
-                value: _eur.format(planTotal),
-                subtitle: objective > 0
-                    ? 'Couverture : ${(planTotal / objective * 100).toStringAsFixed(0)} %'
-                    : null,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MetricCard(
+                  label: 'Sales Plan',
+                  value: _eur.format(planTotal),
+                  subtitle: objective > 0
+                      ? 'Couverture : ${(planTotal / objective * 100).toStringAsFixed(0)} %'
+                      : null,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricCard(
-                label: 'CA réalisé',
-                value: _eur.format(realized),
-                subtitle: planTotal > 0
-                    ? 'Atteinte : ${(realized / planTotal * 100).toStringAsFixed(0)} %'
-                    : null,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MetricCard(
+                  label: 'CA réalisé',
+                  value: _eur.format(realized),
+                  subtitle: planTotal > 0
+                      ? 'Atteinte : ${(realized / planTotal * 100).toStringAsFixed(0)} %'
+                      : null,
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                label: 'Avancement moyen des actions',
-                value: '${avgProgress.toStringAsFixed(0)} %',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricCard(
-                label: 'Actions',
-                value:
-                    '${actions.where((a) => a.status == ActionStatus.done).length} / ${actions.length}',
-                subtitle: 'terminées / total',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-
-        // --- Graphique : plan vs réalisé par IV ---
-        if (service.ivs.isNotEmpty)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Sales Plan par IV - cible vs réalisé',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    height: 260,
-                    child: _PlanByIvChart(service: service, year: year),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _LegendDot(color: Theme.of(context).colorScheme.primary, label: 'Cible'),
-                      const SizedBox(width: 16),
-                      _LegendDot(color: Theme.of(context).colorScheme.tertiary, label: 'Réalisé'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
-        const SizedBox(height: 24),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricCard(
+                  label: 'Avancement moyen des actions',
+                  value: '${avgProgress.toStringAsFixed(0)} %',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MetricCard(
+                  label: 'Actions',
+                  value:
+                      '${actions.where((a) => a.status == ActionStatus.done).length} / ${actions.length}',
+                  subtitle: 'terminées / total',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
 
-        // --- Avancement des actions ---
-        if (actions.isNotEmpty) ...[
-          Text('Avancement des actions', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          ...actions.take(10).map((a) {
-            return ListTile(
-              leading: _StatusDot(progress: a.progress),
-              title: Text(a.title),
-              subtitle: Text(service.ivLabel(a.ivId)),
-              trailing: Text('${a.progress} %'),
-            );
-          }),
+          // --- Graphique : plan vs réalisé par IV ---
+          if (service.ivs.isNotEmpty)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sales Plan par IV - cible vs réalisé',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      height: 260,
+                      child: _PlanByIvChart(service: service, year: year),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _LegendDot(color: Theme.of(context).colorScheme.primary, label: 'Cible'),
+                        const SizedBox(width: 16),
+                        _LegendDot(color: Theme.of(context).colorScheme.tertiary, label: 'Réalisé'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(height: 24),
+
+          // --- Avancement des actions ---
+          if (actions.isNotEmpty) ...[
+            Text('Avancement des actions', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            ...actions.take(10).map((a) {
+              return ListTile(
+                leading: _StatusDot(progress: a.progress),
+                title: Text(a.title),
+                subtitle: Text(service.ivLabel(a.ivId)),
+                trailing: Text('${a.progress} %'),
+              );
+            }),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

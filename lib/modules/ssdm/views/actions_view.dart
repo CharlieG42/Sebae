@@ -9,6 +9,9 @@ import 'action_detail_view.dart';
 final _dateFmt = DateFormat('dd/MM/yyyy');
 
 /// Liste des actions de l'année : équipe + actions spécifiques par IV.
+///
+/// Supporte le filtrage sur une ligne du Sales Plan (chip "Filtre") posé
+/// depuis la vue Sales Plan.
 class ActionsView extends StatelessWidget {
   const ActionsView({super.key});
 
@@ -20,54 +23,98 @@ class ActionsView extends StatelessWidget {
       return const Center(child: Text('Sélectionnez une année.'));
     }
 
-    final actions = service.actionsFor(year);
+    final filter = service.planEntryFilter;
+    final allActions = service.actionsFor(year);
+    final actions = filter == null
+        ? allActions
+        : allActions.where((a) => a.planEntryId == filter).toList();
+
+    final header = filter != null
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: InputChip(
+                avatar: const Icon(Icons.filter_alt, size: 18),
+                label: Text(
+                  'Ligne : ${service.planLineLabel(filter)}',
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onDeleted: () => service.filterActionsByPlan(null),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          )
+        : null;
+
     if (actions.isEmpty) {
-      return EmptyState(
-        icon: Icons.flag_outlined,
-        title: 'Aucune action',
-        message:
-            'Créez des actions spécifiques ( rattachées à un IV ) ou '
-            'des actions communes à l\'équipe.',
-        actionLabel: 'Nouvelle action',
-        onAction: () => showActionDialog(context),
+      return Column(
+        children: [
+          if (header != null) header,
+          Expanded(
+            child: EmptyState(
+              icon: Icons.flag_outlined,
+              title: filter == null ? 'Aucune action' : 'Aucune action liée',
+              message: filter == null
+                  ? 'Créez des actions spécifiques ( rattachées à un IV ) ou '
+                      'des actions communes à l\'équipe.'
+                  : 'Aucune action n\'est liée à cette ligne du Sales Plan. '
+                      'Utilisez le bouton checklist d\'une ligne de plan pour en lier.',
+              actionLabel: 'Nouvelle action',
+              onAction: () => showActionDialog(context),
+            ),
+          ),
+        ],
       );
     }
 
     return Stack(
       children: [
-        ListView.builder(
-          padding: const EdgeInsets.only(bottom: 88),
-          itemCount: actions.length,
-          itemBuilder: (context, index) {
-            final action = actions[index];
-            final iv = service.ivOf(action.ivId);
-            return ListTile(
-              leading: CircleAvatar(
-                child: Icon(action.ivId == null ? Icons.groups : Icons.person),
+        Column(
+          children: [
+            if (header != null) header,
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.only(bottom: 88),
+                itemCount: actions.length,
+                itemBuilder: (context, index) {
+                  final action = actions[index];
+                  final iv = service.ivOf(action.ivId);
+                  return ListTile(
+                    leading: CircleAvatar(
+                      child: Icon(
+                          action.ivId == null ? Icons.groups : Icons.person),
+                    ),
+                    title: Text(action.title),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            '${iv?.name ?? 'Équipe'} - ${action.status.label}'),
+                        const SizedBox(height: 4),
+                        LinearProgressIndicator(
+                          value: action.progress / 100,
+                          minHeight: 6,
+                        ),
+                      ],
+                    ),
+                    isThreeLine: true,
+                    trailing: Text(
+                      action.dueDate == null
+                          ? '-'
+                          : _dateFmt.format(action.dueDate!),
+                    ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            ActionDetailView(actionId: action.id),
+                      ),
+                    ),
+                  );
+                },
               ),
-              title: Text(action.title),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${iv?.name ?? 'Équipe'} - ${action.status.label}'),
-                  const SizedBox(height: 4),
-                  LinearProgressIndicator(
-                    value: action.progress / 100,
-                    minHeight: 6,
-                  ),
-                ],
-              ),
-              isThreeLine: true,
-              trailing: Text(
-                action.dueDate == null ? '-' : _dateFmt.format(action.dueDate!),
-              ),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => ActionDetailView(actionId: action.id),
-                ),
-              ),
-            );
-          },
+            ),
+          ],
         ),
         Positioned(
           right: 16,
@@ -91,6 +138,9 @@ Future<void> showActionDialog(BuildContext context) async {
   final descriptionController = TextEditingController();
   String? ivId; // null => équipe
   DateTime? dueDate;
+  String? planEntryId;
+
+  final planEntries = service.planFor(service.selectedYear);
 
   final confirmed = await showDialog<bool>(
     context: context,
@@ -123,7 +173,8 @@ Future<void> showActionDialog(BuildContext context) async {
                 initialValue: null,
                 decoration: const InputDecoration(labelText: 'Responsable'),
                 items: [
-                  const DropdownMenuItem(value: null, child: Text('Équipe (commune)')),
+                  const DropdownMenuItem(
+                      value: null, child: Text('Équipe (commune)')),
                   for (final iv in service.ivs)
                     DropdownMenuItem(value: iv.id, child: Text(iv.name)),
                 ],
@@ -135,8 +186,11 @@ Future<void> showActionDialog(BuildContext context) async {
                   final picked = await showDatePicker(
                     context: dialogContext,
                     initialDate: dueDate ?? DateTime.now(),
-                    firstDate: DateTime(service.selectedYear ?? DateTime.now().year, 1, 1),
-                    lastDate: DateTime((service.selectedYear ?? DateTime.now().year) + 1, 12, 31),
+                    firstDate: DateTime(
+                        service.selectedYear ?? DateTime.now().year, 1, 1),
+                    lastDate: DateTime(
+                        (service.selectedYear ?? DateTime.now().year) + 1,
+                        12, 31),
                   );
                   if (picked != null) setDialogState(() => dueDate = picked);
                 },
@@ -146,10 +200,35 @@ Future<void> showActionDialog(BuildContext context) async {
                     border: OutlineInputBorder(),
                   ),
                   child: Text(
-                    dueDate == null ? 'Choisir une date' : _dateFmt.format(dueDate!),
+                    dueDate == null
+                        ? 'Choisir une date'
+                        : _dateFmt.format(dueDate!),
                   ),
                 ),
               ),
+              if (planEntries.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String?>(
+                  initialValue: null,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Ligne du Sales Plan (optionnel)',
+                  ),
+                  items: [
+                    const DropdownMenuItem(
+                        value: null, child: Text('Aucune ligne')),
+                    for (final e in planEntries)
+                      DropdownMenuItem(
+                        value: e.id,
+                        child: Text(
+                          service.planLineLabel(e.id),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (v) => setDialogState(() => planEntryId = v),
+                ),
+              ],
             ],
           ),
         ),
@@ -173,6 +252,7 @@ Future<void> showActionDialog(BuildContext context) async {
       description: descriptionController.text.trim(),
       ivId: ivId,
       dueDate: dueDate,
+      planEntryId: planEntryId,
     );
   }
   titleController.dispose();

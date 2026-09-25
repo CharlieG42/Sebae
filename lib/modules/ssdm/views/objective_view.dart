@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../services/ssdm_service.dart';
+import 'create_year_dialog.dart';
 
 final _eur = NumberFormat.currency(locale: 'fr_FR', symbol: 'EUR');
 
@@ -21,56 +22,64 @@ class ObjectiveView extends StatelessWidget {
     final planTotal = service.planTotal(year.year);
     final realized = service.realizedTotal(year.year);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Objectif de CA ${year.year}',
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Text(_eur.format(year.caObjective),
-                    style: Theme.of(context).textTheme.displaySmall),
-                const SizedBox(height: 16),
-                FilledButton.tonalIcon(
-                  onPressed: () => _showEditDialog(context, service, year.caObjective),
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Modifier l\'objectif'),
-                ),
-              ],
+    return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fabNewYearObjective',
+        onPressed: () => showCreateYearDialog(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Nouvelle année'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Objectif de CA ${year.year}',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Text(_eur.format(year.caObjective),
+                      style: Theme.of(context).textTheme.displaySmall),
+                  const SizedBox(height: 16),
+                  FilledButton.tonalIcon(
+                    onPressed: () => _showEditDialog(context, service, year.caObjective),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Modifier l\'objectif'),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Row(label: 'Total du Sales Plan', value: _eur.format(planTotal)),
-                _Row(
-                  label: 'Couverture de l\'objectif',
-                  value: year.caObjective > 0
-                      ? '${(planTotal / year.caObjective * 100).toStringAsFixed(0)} %'
-                      : '-',
-                ),
-                _Row(label: 'CA réalisé', value: _eur.format(realized)),
-                _Row(
-                  label: 'Atteinte du plan',
-                  value: planTotal > 0
-                      ? '${(realized / planTotal * 100).toStringAsFixed(0)} %'
-                      : '-',
-                ),
-              ],
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Row(label: 'Total du Sales Plan', value: _eur.format(planTotal)),
+                  _Row(
+                    label: 'Couverture de l\'objectif',
+                    value: year.caObjective > 0
+                        ? '${(planTotal / year.caObjective * 100).toStringAsFixed(0)} %'
+                        : '-',
+                  ),
+                  _Row(label: 'CA réalisé', value: _eur.format(realized)),
+                  _Row(
+                    label: 'Atteinte du plan',
+                    value: planTotal > 0
+                        ? '${(realized / planTotal * 100).toStringAsFixed(0)} %'
+                        : '-',
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

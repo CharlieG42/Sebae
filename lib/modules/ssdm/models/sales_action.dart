@@ -20,6 +20,9 @@ enum ActionStatus {
 /// Une action peut être rattachée à un IV précise ([ivId] non null) ou être
 /// une action d'équipe ([ivId] null), commune à toute l'équipe. L'avancement
 /// est suivi via [progress] (0-100) et l'historique des mises à jour.
+///
+/// Une action peut être liée à une ligne du Sales Plan ([planEntryId]) afin
+/// de piloter les actions qui concourent à un objectif de CA précis.
 @HiveType(typeId: 22)
 class SalesAction extends HiveObject {
   @HiveField(0)
@@ -61,6 +64,11 @@ class SalesAction extends HiveObject {
   @HiveField(11)
   List<ActionUpdate> history;
 
+  /// Ligne du Sales Plan à laquelle cette action est liée (optionnel).
+  /// Null => action non liée à une ligne de plan.
+  @HiveField(12)
+  String? planEntryId;
+
   SalesAction({
     required this.id,
     required this.year,
@@ -76,6 +84,7 @@ class SalesAction extends HiveObject {
     this.dueDate,
     DateTime? createdAt,
     List<ActionUpdate>? history,
+    this.planEntryId,
   })  : createdAt = createdAt ?? DateTime.now(),
         history = history ?? [];
 

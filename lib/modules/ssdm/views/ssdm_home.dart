@@ -13,8 +13,40 @@ import 'plan_view.dart';
 ///
 /// Une année doit être sélectionnée pour accéder au pilotage
 /// (objectif de CA, sales plan, actions).
-class SsdmHome extends StatelessWidget {
+///
+/// Le bouton "Nouvelle année" est volontairement réservé aux onglets
+/// Dashboard et Objectif CA (voir ces vues) : il ne se superpose plus
+/// aux autres contenus.
+class SsdmHome extends StatefulWidget {
   const SsdmHome({super.key});
+
+  @override
+  State<SsdmHome> createState() => _SsdmHomeState();
+}
+
+class _SsdmHomeState extends State<SsdmHome>
+    with SingleTickerProviderStateMixin {
+  TabController? _tabController;
+  SsdmService? _service;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final service = context.read<SsdmService>();
+    if (service != _service) {
+      _service = service;
+      _tabController?.dispose();
+      _tabController = TabController(length: 4, vsync: this);
+      service.tabController = _tabController;
+    }
+  }
+
+  @override
+  void dispose() {
+    _service?.tabController = null;
+    _tabController?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,60 +68,53 @@ class SsdmHome extends StatelessWidget {
       );
     }
 
-    final selected = service.selectedYear ?? years.last;
-    if (service.selectedYear != selected) {
-      // Première ouverture : sélectionne la dernière année par défaut.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        service.selectYear(selected);
-      });
-    }
+    final controller = _tabController!;
 
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('SSDM'),
-          actions: [
-            YearSelector(years: years, selected: selected),
-            const SizedBox(width: 8),
-          ],
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'Dashboard'),
-              Tab(text: 'Objectif CA'),
-              Tab(text: 'Sales Plan'),
-              Tab(text: 'Actions'),
-            ],
-          ),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => showCreateYearDialog(context),
-          icon: const Icon(Icons.add),
-          label: const Text('Nouvelle année'),
-        ),
-        body: const TabBarView(
-          children: [
-            DashboardView(),
-            ObjectiveView(),
-            PlanView(),
-            ActionsView(),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('SSDM'),
+        actions: [
+          YearSelector(years: years, service: service),
+          const SizedBox(width: 8),
+        ],
+        bottom: TabBar(
+          isScrollable: true,
+          controller: controller,
+          tabs: const [
+            Tab(text: 'Dashboard'),
+            Tab(text: 'Objectif CA'),
+            Tab(text: 'Sales Plan'),
+            Tab(text: 'Actions'),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: controller,
+        children: const [
+          DashboardView(),
+          ObjectiveView(),
+          PlanView(),
+          ActionsView(),
+        ],
       ),
     );
   }
 }
 
 class YearSelector extends StatelessWidget {
-  const YearSelector({super.key, required this.years, required this.selected});
+  const YearSelector({super.key, required this.years, required this.service});
 
   final List<int> years;
-  final int selected;
+  final SsdmService service;
 
   @override
   Widget build(BuildContext context) {
-    final service = context.read<SsdmService>();
+    final selected = service.selectedYear ?? years.last;
+    if (service.selectedYear != selected) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        service.selectYear(selected);
+      });
+    }
     return DropdownButton<int>(
       value: selected,
       underline: const SizedBox.shrink(),

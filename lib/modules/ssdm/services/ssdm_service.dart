@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 
@@ -13,10 +13,24 @@ import '../models/ssdm_year.dart';
 /// Sentinel signifiant "Tous" sur un axe du Sales Plan.
 const kAllId = 'all';
 
+/// Indices des onglets du module SSDM (voir SsdmHome).
+abstract final class SsdmTabs {
+  static const dashboard = 0;
+  static const objective = 1;
+  static const plan = 2;
+  static const actions = 3;
+}
+
 /// Service central du module SSDM.
 ///
 /// Expose les années, le Sales Plan et les actions de l'année sélectionnée,
 /// et notifie l'UI à chaque modification (ChangeNotifier + Provider).
+///
+/// Il porte aussi deux éléments de navigation :
+/// - [tabController] : référencé par SsdmHome pour permettre aux vues de
+///   changer d'onglet (ex. voir les actions liées à une ligne de plan) ;
+/// - [planEntryFilter] : filtre courant de la vue Actions sur une ligne du
+///   Sales Plan (null = pas de filtre).
 class SsdmService extends ChangeNotifier {
   static const _uuid = Uuid();
 
@@ -29,6 +43,12 @@ class SsdmService extends ChangeNotifier {
 
   int? _selectedYear;
 
+  /// Contrôleur d'onglets référencé par SsdmHome (nav inter-vues).
+  TabController? tabController;
+
+  /// Filtre "ligne du plan" appliqué à la vue Actions.
+  String? planEntryFilter;
+
   SsdmService()
       : _years = Hive.box<SsdmYear>(BoxNames.ssdmYears),
         _plan = Hive.box<SalesPlanEntry>(BoxNames.ssdmPlan),
@@ -36,6 +56,17 @@ class SsdmService extends ChangeNotifier {
         _ivs = Hive.box<Iv>(BoxNames.ivs),
         _groups = Hive.box<ClientGroup>(BoxNames.clientGroups),
         _types = Hive.box<ClientType>(BoxNames.clientTypes);
+
+  // ------------------------------------------------------------- Navigation
+
+  void goToPlanTab() => tabController?.animateTo(SsdmTabs.plan);
+  void goToActionsTab() => tabController?.animateTo(SsdmTabs.actions);
+
+  /// Filtre la vue Actions sur une ligne du plan (null = aucun filtre).
+  void filterActionsByPlan(String? planEntryId) {
+    planEntryFilter = planEntryId;
+    notifyListeners();
+  }
 
   // ------------------------------------------------------------------ Années
 
@@ -127,7 +158,8 @@ class SsdmService extends ChangeNotifier {
         (a) => a.year == copyFromYear && a.ivId == null,
       );
       for (final source in teamActions) {
-        await _actions.add(_copyForNewYear(source, year));
+        final copy = _copyForNewYear(source, year);
+        await _actions.put(copy.id, copy);
       }
     }
 
@@ -171,6 +203,23 @@ class SsdmService extends ChangeNotifier {
   double realizedTotal(int year) => _plan.values
       .where((e) => e.year == year)
       .fold(0.0, (sum, e) => sum + e.realizedAmount);
+
+  /// Retrouve une ligne de plan par son id.
+  SalesPlanEntry? planEntryOf(String? id) {
+    if (id == null) return null;
+    for (final e in _plan.values) {
+      if (e.id == id) return e;
+    }
+    return null;
+  }
+
+  /// Libellé complet d'une ligne de plan : "IV - groupe - type".
+  String planLineLabel(String planEntryId) {
+    final e = planEntryOf(planEntryId);
+    if (e == null) return '?';
+    return '${ivLabel(e.ivId)} - ${groupLabel(e.clientGroupId)} - '
+        '${typeLabel(e.clientTypeId)}';
+  }
 
   /// Total du Sales Plan par IV pour une année.
   ///
@@ -219,7 +268,13 @@ class SsdmService extends ChangeNotifier {
   }
 
   Future<void> deletePlanEntry(SalesPlanEntry entry) async {
+    // Détache les actions liées avant suppression de la ligne.
+    for (final a in _actions.values.where((a) => a.planEntryId == entry.id)) {
+      a.planEntryId = null;
+      await a.save();
+    }
     await entry.delete();
+    if (planEntryFilter == entry.id) planEntryFilter = null;
     notifyListeners();
   }
 
@@ -250,6 +305,22 @@ class SsdmService extends ChangeNotifier {
     return null;
   }
 
+  /// Actions liées à une ligne du Sales Plan.
+  List<SalesAction> actionsForPlan(String planEntryId) =>
+      _actions.values.where((a) => a.planEntryId == planEntryId).toList()
+        ..sort((a, b) {
+          final da = a.dueDate;
+          final db = b.dueDate;
+          if (da == null && db == null) return 0;
+          if (da == null) return 1;
+          if (db == null) return -1;
+          return da.compareTo(db);
+        });
+
+  /// Nombre d'actions liées à une ligne (pour les badges).
+  int actionCountForPlan(String planEntryId) =>
+      _actions.values.where((a) => a.planEntryId == planEntryId).length;
+
   Future<void> addAction({
     required String title,
     String description = '',
@@ -257,6 +328,7 @@ class SsdmService extends ChangeNotifier {
     String? clientGroupId,
     String? clientTypeId,
     DateTime? dueDate,
+    String? planEntryId,
   }) async {
     final year = _selectedYear;
     if (year == null) return;
@@ -269,6 +341,7 @@ class SsdmService extends ChangeNotifier {
       clientGroupId: clientGroupId,
       clientTypeId: clientTypeId,
       dueDate: dueDate,
+      planEntryId: planEntryId,
     );
     await _actions.put(action.id, action);
     notifyListeners();
@@ -281,6 +354,13 @@ class SsdmService extends ChangeNotifier {
 
   Future<void> deleteAction(SalesAction action) async {
     await action.delete();
+    notifyListeners();
+  }
+
+  /// Lie / délie une action à une ligne du Sales Plan.
+  Future<void> linkActionToPlan(SalesAction action, String? planEntryId) async {
+    action.planEntryId = planEntryId;
+    await action.save();
     notifyListeners();
   }
 

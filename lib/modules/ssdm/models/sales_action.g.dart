@@ -29,13 +29,15 @@ class SalesActionAdapter extends TypeAdapter<SalesAction> {
       dueDate: fields[9] as DateTime?,
       createdAt: fields[10] as DateTime?,
       history: (fields[11] as List?)?.cast<ActionUpdate>(),
+      planEntryId: fields[12] as String?,
+      steps: (fields[13] as List?)?.cast<ActionStep>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, SalesAction obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -59,7 +61,11 @@ class SalesActionAdapter extends TypeAdapter<SalesAction> {
       ..writeByte(10)
       ..write(obj.createdAt)
       ..writeByte(11)
-      ..write(obj.history);
+      ..write(obj.history)
+      ..writeByte(12)
+      ..write(obj.planEntryId)
+      ..writeByte(13)
+      ..write(obj.steps);
   }
 
   @override

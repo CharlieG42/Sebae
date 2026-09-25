@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../shared/models/client_group.dart';
 import '../../shared/models/client_type.dart';
 import '../../shared/models/iv.dart';
+import '../../modules/ssdm/models/action_step.dart';
 import '../../modules/ssdm/models/action_update.dart';
 import '../../modules/ssdm/models/sales_action.dart';
 import '../../modules/ssdm/models/sales_plan_entry.dart';
@@ -30,6 +31,7 @@ class HiveService {
     Hive.registerAdapter(SalesPlanEntryAdapter());
     Hive.registerAdapter(SalesActionAdapter());
     Hive.registerAdapter(ActionUpdateAdapter());
+    Hive.registerAdapter(ActionStepAdapter());
 
     // --- Ouverture des boxes ---
     await Future.wait([

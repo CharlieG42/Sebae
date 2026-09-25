@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/storage/box_names.dart';
@@ -10,7 +9,7 @@ import '../shared/models/iv.dart';
 
 /// Visualisation et gestion des bases de données partagées.
 ///
-/// Les entites définies ici (IV, groupes et types de clients) sont communes
+/// Les entités définies ici (IV, groupes et types de clients) sont communes
 /// à tous les modules Sebae et, à terme, aux outils intégrés comme WUECT.
 class DataHome extends StatelessWidget {
   const DataHome({super.key});

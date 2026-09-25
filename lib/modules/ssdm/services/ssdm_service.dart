@@ -6,7 +6,6 @@ import '../../../core/storage/box_names.dart';
 import '../../../shared/models/client_group.dart';
 import '../../../shared/models/client_type.dart';
 import '../../../shared/models/iv.dart';
-import '../models/action_update.dart';
 import '../models/sales_action.dart';
 import '../models/sales_plan_entry.dart';
 import '../models/ssdm_year.dart';

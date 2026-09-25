@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../shared/widgets/empty_state.dart';
-import '../models/sales_action.dart';
 import '../services/ssdm_service.dart';
 import 'action_detail_view.dart';
 
@@ -85,7 +84,7 @@ class ActionsView extends StatelessWidget {
   }
 }
 
-/// Dialogue de creation d'une action.
+/// Dialogue de création d'une action.
 Future<void> showActionDialog(BuildContext context) async {
   final service = context.read<SsdmService>();
   final titleController = TextEditingController();

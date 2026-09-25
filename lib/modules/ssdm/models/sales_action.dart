@@ -1,5 +1,7 @@
 import 'package:hive/hive.dart';
 
+import 'action_update.dart';
+
 part 'sales_action.g.dart';
 
 /// Statut d'une action.
@@ -13,9 +15,9 @@ enum ActionStatus {
   final String label;
 }
 
-/// Action commerciale / de développément.
+/// Action commerciale / de développement.
 ///
-/// Une action peut être rattachée à un IV precise ([ivId] non null) ou etre
+/// Une action peut être rattachée à un IV précise ([ivId] non null) ou être
 /// une action d'équipe ([ivId] null), commune à toute l'équipe. L'avancement
 /// est suivi via [progress] (0-100) et l'historique des mises à jour.
 @HiveType(typeId: 22)
@@ -67,7 +69,9 @@ class SalesAction extends HiveObject {
     this.ivId,
     this.clientGroupId,
     this.clientTypeId,
-    this.statusIndex = ActionStatus.planned.index,
+    // 0 = ActionStatus.planned.index (valeur par défaut non const
+    // interdite en Dart, donc codée en dur ici).
+    this.statusIndex = 0,
     this.progress = 0,
     this.dueDate,
     DateTime? createdAt,

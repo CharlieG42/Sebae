@@ -76,9 +76,9 @@ class _IvTab extends StatelessWidget {
                   leading: CircleAvatar(child: Text(iv.shortLabel)),
                   title: Text(iv.name),
                   subtitle: Text(
-                    iv.trigram.isEmpty
+                    iv.trigramOrEmpty.isEmpty
                         ? (iv.active ? 'Actif' : 'Inactif')
-                        : 'Trigramme : ${iv.trigram} - ${iv.active ? 'Actif' : 'Inactif'}',
+                        : 'Trigramme : ${iv.trigramOrEmpty} - ${iv.active ? 'Actif' : 'Inactif'}',
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -157,12 +157,12 @@ Future<void> showIvDialog(BuildContext context, {Iv? iv}) async {
       final newIv = Iv(
         id: uuid.v4(),
         name: nameController.text.trim(),
-        trigram: trigram,
+        trigram: trigram.isEmpty ? null : trigram,
       );
       await box.put(newIv.id, newIv);
     } else {
       iv.name = nameController.text.trim();
-      iv.trigram = trigram;
+      iv.trigram = trigram.isEmpty ? null : trigram;
       await iv.save();
     }
   }

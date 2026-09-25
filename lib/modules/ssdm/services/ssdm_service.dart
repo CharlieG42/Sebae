@@ -90,7 +90,7 @@ class SsdmService extends ChangeNotifier {
     if (id == kAllId) return 'Tous';
     final iv = ivOf(id);
     if (iv == null) return '?';
-    return iv.trigram.isEmpty ? iv.name : '${iv.trigram} - ${iv.name}';
+    return iv.trigramOrEmpty.isEmpty ? iv.name : '${iv.trigramOrEmpty} - ${iv.name}';
   }
 
   /// Libellé groupe de clients ("Tous" pour la sentinel).

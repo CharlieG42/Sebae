@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../../shared/models/iv.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../models/sales_plan_entry.dart';
 import '../services/ssdm_service.dart';
@@ -147,6 +148,11 @@ class PlanView extends StatelessWidget {
   }
 }
 
+/// Libellé d'un IV pour les listes déroulantes.
+String _ivDropdownLabel(Iv iv) => iv.trigramOrEmpty.isEmpty
+    ? iv.name
+    : '${iv.trigramOrEmpty} - ${iv.name}';
+
 /// Dialogue de création / modification d'une ligne de plan.
 ///
 /// Chaque axe propose en première position l'option "Tous" (ligne globale).
@@ -260,7 +266,7 @@ class _PlanEntryDialogState extends State<_PlanEntryDialog> {
             items: [
               const DropdownMenuItem(value: kAllId, child: Text('Tous')),
               for (final iv in service.ivs)
-                DropdownMenuItem(value: iv.id, child: Text(iv.trigram.isEmpty ? iv.name : '${iv.trigram} - ${iv.name}')),
+                DropdownMenuItem(value: iv.id, child: Text(_ivDropdownLabel(iv))),
             ],
             onChanged: (v) => setState(() => _ivId = v ?? _ivId),
           ),

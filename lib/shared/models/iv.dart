@@ -10,6 +10,10 @@ part 'iv.g.dart';
 ///
 /// Le [id] (UUID) sert de clé Hive : les autres entités référencent les IV
 /// par cet id, jamais par la clé auto-incrémentée de la box.
+///
+/// Note : [trigram] est nullable car le champ a été ajouté après les
+/// premières données enregistrées — Hive renvoie null pour les
+/// enregistrements antérieurs.
 @HiveType(typeId: 1)
 class Iv extends HiveObject {
   @HiveField(0)
@@ -19,8 +23,9 @@ class Iv extends HiveObject {
   String name;
 
   /// Trigramme société (ex. "DBA"). Convention interne WildZimut.
+  /// Null pour les IV créés avant l'ajout du champ.
   @HiveField(3)
-  String trigram;
+  String? trigram;
 
   @HiveField(2)
   bool active;
@@ -28,11 +33,14 @@ class Iv extends HiveObject {
   Iv({
     required this.id,
     required this.name,
-    this.trigram = '',
+    this.trigram,
     this.active = true,
   });
 
+  /// Trigramme ou chaîne vide.
+  String get trigramOrEmpty => trigram ?? '';
+
   /// Libellé court pour les listes : trigramme si défini, sinon initiale.
   String get shortLabel =>
-      trigram.isNotEmpty ? trigram : (name.isNotEmpty ? name[0] : '?');
+      trigramOrEmpty.isNotEmpty ? trigramOrEmpty : (name.isNotEmpty ? name[0] : '?');
 }

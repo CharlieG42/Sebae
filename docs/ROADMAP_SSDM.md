@@ -9,6 +9,14 @@
 - Dashboard : cartes de synthèse, graphique plan vs réalisé par IV, avancement des actions
 - Entités partagées : IV, groupes et types de clients (CRUD dans « Bases partagées »)
 
+## Fait (v2 - actions liées au plan)
+
+- Actions liées aux lignes du Sales Plan : badge compteur par ligne, création rapide pré-remplie, association/dissociation, navigation croisée Sales Plan ↔ Actions, filtre par ligne
+- Étapes pondérées par action : libellé, poids, statut (à faire / en cours / fait / bloquée / annulée), échéance, réordonnancement
+- Avancement calculé automatiquement depuis les étapes (sinon manuel), statut de l'action resynchronisé, badges « bloquée » / « en retard » dans la liste et le détail
+- Création d'une année : recopie des étapes (statuts remis à zéro, échéances décalées) et du lien au Sales Plan
+- Dashboard : radar (toile d'araignée) de l'avancement des actions, par IV ou par ligne du Sales Plan
+
 ## Prochaines étapes
 
 - [ ] Répartition automatique de l'objectif CA par IV (prorata)

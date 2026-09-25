@@ -484,7 +484,7 @@ class _PlanEntryActionsDialogState extends State<_PlanEntryActionsDialog> {
                       ListTile(
                         dense: true,
                         contentPadding: EdgeInsets.zero,
-                        leading: _MiniStatusDot(progress: action.progress),
+                        leading: _MiniStatusDot(progress: action.effectiveProgress),
                         title: Text(action.title),
                         subtitle: Text(
                           '${service.ivLabel(action.ivId)} - ${action.status.label} - ${action.progress} %',

@@ -121,16 +121,21 @@ class DashboardView extends StatelessWidget {
             ),
           const SizedBox(height: 24),
 
+          // --- Radar : avancement des actions ---
+          if (service.ivs.isNotEmpty || service.planFor(year).isNotEmpty)
+            _RadarCard(service: service, year: year),
+          const SizedBox(height: 24),
+
           // --- Avancement des actions ---
           if (actions.isNotEmpty) ...[
             Text('Avancement des actions', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             ...actions.take(10).map((a) {
               return ListTile(
-                leading: _StatusDot(progress: a.progress),
+                leading: _StatusDot(progress: a.effectiveProgress),
                 title: Text(a.title),
                 subtitle: Text(service.ivLabel(a.ivId)),
-                trailing: Text('${a.progress} %'),
+                trailing: Text('${a.effectiveProgress} %'),
               );
             }),
           ],
@@ -199,6 +204,123 @@ class _StatusDot extends StatelessWidget {
             ? Colors.orange
             : Colors.grey;
     return CircleAvatar(radius: 6, backgroundColor: color);
+  }
+}
+
+class _RadarCard extends StatefulWidget {
+  const _RadarCard({required this.service, required this.year});
+
+  final SsdmService service;
+  final int year;
+
+  @override
+  State<_RadarCard> createState() => _RadarCardState();
+}
+
+enum _RadarMode { byIv, byPlan }
+
+class _RadarCardState extends State<_RadarCard> {
+  _RadarMode _mode = _RadarMode.byIv;
+
+  @override
+  Widget build(BuildContext context) {
+    final service = widget.service;
+    final theme = Theme.of(context);
+
+    // Construit les axes selon le mode.
+    final labels = <String>[];
+    final values = <double>[];
+    if (_mode == _RadarMode.byIv) {
+      final progress = service.progressByIv(widget.year);
+      for (final iv in service.ivs) {
+        if (progress.containsKey(iv.id)) {
+          labels.add(iv.shortLabel);
+          values.add(progress[iv.id]!);
+        }
+      }
+    } else {
+      final progress = service.progressByPlan(widget.year);
+      final entries = service.planFor(widget.year);
+      for (final e in entries) {
+        final v = progress[e.id];
+        if (v != null) {
+          labels.add(service.planLineShortLabel(e.id));
+          values.add(v);
+        }
+      }
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Avancement des actions',
+                style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            SegmentedButton<_RadarMode>(
+              segments: const [
+                ButtonSegment(
+                    value: _RadarMode.byIv, label: Text('Par IV')),
+                ButtonSegment(
+                    value: _RadarMode.byPlan,
+                    label: Text('Par ligne du Sales Plan')),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (s) => setState(() => _mode = s.first),
+            ),
+            const SizedBox(height: 12),
+            if (values.length < 3)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  'Le radar nécessite au moins 3 axes avec des actions : '
+                  'créez des actions rattachées à des IV '
+                  '${_mode == _RadarMode.byPlan ? 'ou liées à des lignes du Sales Plan ' : ''}'
+                  'pour l\'année sélectionnée.',
+                  style: theme.textTheme.bodySmall,
+                ),
+              )
+            else
+              SizedBox(
+                height: 280,
+                child: RadarChart(
+                  RadarChartData(
+                    radarShape: RadarShape.polygon,
+                    tickCount: 5,
+                    dataSets: [
+                      RadarDataSet(
+                        dataEntries: [for (final v in values) RadarEntry(value: v)],
+                        fillColor:
+                            theme.colorScheme.primary.withValues(alpha: 0.25),
+                        borderColor: theme.colorScheme.primary,
+                        borderWidth: 2,
+                      ),
+                    ],
+                    getTitle: (index, _) =>
+                        RadarChartTitle(text: labels[index], textStyle: const TextStyle(fontSize: 11)),
+                    gridBorderData:
+                        BorderSide(color: theme.colorScheme.outlineVariant),
+                    tickBorderData:
+                        BorderSide(color: theme.colorScheme.outlineVariant),
+                    titlePositionPercentageOffset: 0.2,
+                  ),
+                  duration: const Duration(milliseconds: 400),
+                ),
+              ),
+            if (values.length >= 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Valeur = avancement moyen pondéré des actions (0-100 %).',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../models/action_step.dart';
 import '../models/sales_action.dart';
 import '../services/ssdm_service.dart';
 
 final _dateFmt = DateFormat('dd/MM/yyyy HH:mm');
+final _dayFmt = DateFormat('dd/MM/yyyy');
 final _eur = NumberFormat.currency(locale: 'fr_FR', symbol: 'EUR');
 
-/// Détail d'une action : mise à jour de l'avancement, historique et
+/// Détail d'une action : étapes pondérées, avancement, historique et
 /// liaison à une ligne du Sales Plan.
 class ActionDetailView extends StatelessWidget {
   const ActionDetailView({super.key, required this.actionId});
@@ -69,6 +71,15 @@ class ActionDetailView extends StatelessWidget {
           ),
           if (action.dueDate != null)
             Text('Échéance : ${_dateFmt.format(action.dueDate!)}'),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              if (action.isBlocked) _WarningChip(color: Colors.red, label: 'Bloquée', icon: Icons.block),
+              if (action.isLate) _WarningChip(color: Colors.orange, label: 'En retard', icon: Icons.schedule),
+            ],
+          ),
           if (action.description.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(action.description),
@@ -123,6 +134,10 @@ class ActionDetailView extends StatelessWidget {
           ],
           const Divider(height: 32),
 
+          // --- Étapes pondérées ---
+          _StepsSection(action: action),
+          const Divider(height: 32),
+
           _ProgressSection(action: action),
           const Divider(height: 32),
           Text('Historique', style: Theme.of(context).textTheme.titleMedium),
@@ -150,6 +165,336 @@ class ActionDetailView extends StatelessWidget {
     );
   }
 }
+
+class _WarningChip extends StatelessWidget {
+  const _WarningChip({required this.color, required this.label, required this.icon});
+
+  final Color color;
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+// --------------------------------------------------------------------- Étapes
+
+/// Section d'édition des étapes pondérées d'une action.
+class _StepsSection extends StatelessWidget {
+  const _StepsSection({required this.action});
+
+  final SalesAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final service = context.read<SsdmService>();
+    final steps = action.steps ?? const <ActionStep>[];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                action.hasSteps
+                    ? 'Étapes (${action.doneStepCount}/${action.activeSteps.length} faites)'
+                    : 'Étapes',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text('Ajouter'),
+              onPressed: () => _showStepDialog(context, service, action),
+            ),
+          ],
+        ),
+        if (!action.hasSteps)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+                'Définissez des étapes pondérées pour un avancement calculé '
+                'automatiquement. Sans étape, l\'avancement reste manuel.'),
+          )
+        else
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            itemCount: steps.length,
+            onReorder: (oldIndex, newIndex) =>
+                service.moveStep(action, oldIndex, newIndex),
+            itemBuilder: (context, index) {
+              final step = steps[index];
+              return ListTile(
+                key: ValueKey(step.id),
+                dense: true,
+                leading: ReorderableDragStartListener(
+                  index: index,
+                  child: const Icon(Icons.drag_indicator, size: 20),
+                ),
+                title: Row(
+                  children: [
+                    _StepStatusButton(
+                      step: step,
+                      onTap: () => _pickStepStatus(context, service, step),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                        child: Text(step.label,
+                            overflow: TextOverflow.ellipsis)),
+                  ],
+                ),
+                subtitle: Row(
+                  children: [
+                    Text('poids ${step.weight}'),
+                    if (step.dueDate != null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Text(
+                          step.isLate ? 'en retard' : _dayFmt.format(step.dueDate!),
+                          style: TextStyle(
+                            color: step.isLate ? Colors.orange : null,
+                            fontWeight: step.isLate ? FontWeight.w600 : null,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                trailing: PopupMenuButton<String>(
+                  onSelected: (v) {
+                    if (v == 'edit') {
+                      _showStepDialog(context, service, action, step: step);
+                    } else if (v == 'delete') {
+                      service.deleteStep(action, step);
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Text('Modifier')),
+                    PopupMenuItem(value: 'delete', child: Text('Supprimer')),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  void _pickStepStatus(
+      BuildContext context, SsdmService service, ActionStep step) async {
+    final action = this.action;
+    final status = await showDialog<ActionStepStatus>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(step.label),
+        children: [
+          for (final s in ActionStepStatus.values)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, s),
+              child: Row(
+                children: [
+                  Icon(_statusIcon(s), color: _statusColor(s), size: 18),
+                  const SizedBox(width: 12),
+                  Text(s.label),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (status != null) {
+      await service.setStepStatus(
+        action,
+        step,
+        status,
+        comment: 'Étape "${step.label}" : ${status.label}',
+      );
+    }
+  }
+
+  Future<void> _showStepDialog(
+    BuildContext context,
+    SsdmService service,
+    SalesAction action, {
+    ActionStep? step,
+  }) async {
+    final labelController = TextEditingController(text: step?.label ?? '');
+    int weight = step?.weight ?? 1;
+    DateTime? dueDate = step?.dueDate;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(step == null ? 'Nouvelle étape' : 'Modifier l\'étape'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: labelController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Libellé de l\'étape',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  initialValue: weight,
+                  decoration: const InputDecoration(
+                      labelText: 'Poids dans l\'avancement'),
+                  items: [
+                    for (var w = 1; w <= 5; w++)
+                      DropdownMenuItem(
+                          value: w,
+                          child: Text(w == 1 ? '1 (standard)' : '$w')),
+                  ],
+                  onChanged: (v) =>
+                      setDialogState(() => weight = v ?? 1),
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: dialogContext,
+                      initialDate: dueDate ?? DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) setDialogState(() => dueDate = picked);
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Échéance (optionnelle)',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Text(
+                      dueDate == null ? 'Choisir une date' : _dayFmt.format(dueDate!),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Enregistrer'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && labelController.text.trim().isNotEmpty) {
+      if (step == null) {
+        await service.addStep(
+          action,
+          label: labelController.text.trim(),
+          weight: weight,
+          dueDate: dueDate,
+        );
+      } else {
+        await service.updateStep(
+          action,
+          step,
+          label: labelController.text,
+          weight: weight,
+          dueDate: dueDate,
+        );
+      }
+    }
+    labelController.dispose();
+  }
+}
+
+class _StepStatusButton extends StatelessWidget {
+  const _StepStatusButton({required this.step, required this.onTap});
+
+  final ActionStep step;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: _statusColor(step.status).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_statusIcon(step.status), size: 16, color: _statusColor(step.status)),
+            const SizedBox(width: 6),
+            Text(
+              step.status.label,
+              style: TextStyle(fontSize: 12, color: _statusColor(step.status)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Color _statusColor(ActionStepStatus status) {
+  switch (status) {
+    case ActionStepStatus.todo:
+      return Colors.blueGrey;
+    case ActionStepStatus.inProgress:
+      return Colors.blue;
+    case ActionStepStatus.done:
+      return Colors.green;
+    case ActionStepStatus.blocked:
+      return Colors.red;
+    case ActionStepStatus.cancelled:
+      return Colors.grey;
+  }
+}
+
+IconData _statusIcon(ActionStepStatus status) {
+  switch (status) {
+    case ActionStepStatus.todo:
+      return Icons.radio_button_unchecked;
+    case ActionStepStatus.inProgress:
+      return Icons.adjust;
+    case ActionStepStatus.done:
+      return Icons.check_circle;
+    case ActionStepStatus.blocked:
+      return Icons.block;
+    case ActionStepStatus.cancelled:
+      return Icons.cancel_outlined;
+  }
+}
+
+// ----------------------------------------------------------------- Avancement
 
 class _ProgressSection extends StatefulWidget {
   const _ProgressSection({required this.action});
@@ -179,6 +524,31 @@ class _ProgressSectionState extends State<_ProgressSection> {
   @override
   Widget build(BuildContext context) {
     final service = context.read<SsdmService>();
+
+    // Action pilotée par étapes : avancement calculé, en lecture seule.
+    if (widget.action.hasSteps) {
+      final progress = widget.action.computedProgress;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Avancement : $progress %',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: progress / 100,
+            minHeight: 10,
+            borderRadius: BorderRadius.circular(5),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Calculé automatiquement à partir des étapes pondérées '
+            '(${widget.action.doneStepCount}/${widget.action.activeSteps.length} faites).',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

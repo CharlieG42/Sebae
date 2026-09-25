@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 
+import 'action_step.dart';
 import 'action_update.dart';
 
 part 'sales_action.g.dart';
@@ -69,6 +70,14 @@ class SalesAction extends HiveObject {
   @HiveField(12)
   String? planEntryId;
 
+  /// Étapes pondérées de l'action (optionnel).
+  ///
+  /// Null ou vide => avancement manuel via [progress].
+  /// Non vide => l'avancement est calculé depuis les étapes
+  /// (voir [computedProgress]).
+  @HiveField(13)
+  List<ActionStep>? steps;
+
   SalesAction({
     required this.id,
     required this.year,
@@ -85,6 +94,7 @@ class SalesAction extends HiveObject {
     DateTime? createdAt,
     List<ActionUpdate>? history,
     this.planEntryId,
+    this.steps,
   })  : createdAt = createdAt ?? DateTime.now(),
         history = history ?? [];
 
@@ -103,5 +113,48 @@ class SalesAction extends HiveObject {
     } else if (progress > 0 && status == ActionStatus.planned) {
       status = ActionStatus.inProgress;
     }
+  }
+
+  // ------------------------------------------------- Étapes et avancement ---
+
+  /// Vrai si l'action est pilotée par des étapes pondérées.
+  bool get hasSteps => steps != null && steps!.isNotEmpty;
+
+  /// Étapes non annulées (celles qui comptent dans le calcul).
+  List<ActionStep> get activeSteps =>
+      hasSteps ? steps!.where((s) => s.status != ActionStepStatus.cancelled).toList() : <ActionStep>[];
+
+  /// Nombre d'étapes faites sur les étapes actives.
+  int get doneStepCount =>
+      activeSteps.where((s) => s.status == ActionStepStatus.done).length;
+
+  /// Avancement calculé depuis les étapes pondérées (0-100).
+  /// Renvoie -1 si l'action n'a pas d'étapes.
+  int get computedProgress {
+    if (!hasSteps) return -1;
+    final active = activeSteps;
+    if (active.isEmpty) return 0;
+    final totalWeight =
+        active.fold(0, (sum, s) => sum + (s.weight <= 0 ? 1 : s.weight));
+    final doneWeight = active.fold(
+        0,
+        (sum, s) =>
+            s.status == ActionStepStatus.done ? sum + (s.weight <= 0 ? 1 : s.weight) : sum);
+    return ((doneWeight / totalWeight) * 100).round().clamp(0, 100);
+  }
+
+  /// Avancement utilisé partout dans l'UI : calculé si étapes, sinon manuel.
+  int get effectiveProgress => hasSteps ? computedProgress : progress;
+
+  /// Vrai si au moins une étape active est bloquée.
+  bool get isBlocked => activeSteps.any((s) => s.status == ActionStepStatus.blocked);
+
+  /// Vrai si l'action (ou une de ses étapes) est en retard.
+  bool get isLate {
+    final actionLate = dueDate != null &&
+        status != ActionStatus.done &&
+        status != ActionStatus.cancelled &&
+        dueDate!.isBefore(DateTime.now());
+    return actionLate || activeSteps.any((s) => s.isLate);
   }
 }

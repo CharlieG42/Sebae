@@ -93,9 +93,42 @@ class ActionsView extends StatelessWidget {
                             '${iv?.name ?? 'Équipe'} - ${action.status.label}'),
                         const SizedBox(height: 4),
                         LinearProgressIndicator(
-                          value: action.progress / 100,
+                          value: action.effectiveProgress / 100,
                           minHeight: 6,
                         ),
+                        if (action.hasSteps ||
+                            action.isBlocked ||
+                            action.isLate)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Wrap(
+                              spacing: 10,
+                              children: [
+                                if (action.hasSteps)
+                                  Text(
+                                    '${action.doneStepCount}/${action.activeSteps.length} étapes',
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                if (action.isBlocked)
+                                  const Text(
+                                    'Bloquée',
+                                    style: TextStyle(
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12),
+                                  ),
+                                if (action.isLate)
+                                  const Text(
+                                    'En retard',
+                                    style: TextStyle(
+                                        color: Colors.orange,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12),
+                                  ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                     isThreeLine: true,
@@ -136,6 +169,7 @@ Future<void> showActionDialog(BuildContext context) async {
   final service = context.read<SsdmService>();
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
+  final stepsController = TextEditingController();
   String? ivId; // null => équipe
   DateTime? dueDate;
   String? planEntryId;
@@ -229,6 +263,24 @@ Future<void> showActionDialog(BuildContext context) async {
                   onChanged: (v) => setDialogState(() => planEntryId = v),
                 ),
               ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: stepsController,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Étapes (une par ligne, optionnel)',
+                  hintText: 'Ex :\nQualifier les 20 comptes\nEnvoyer les offres\nSigner',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Avec des étapes, l\'avancement est calculé automatiquement '
+                  'au fil de leur réalisation.',
+                  style: Theme.of(dialogContext).textTheme.bodySmall,
+                ),
+              ),
             ],
           ),
         ),
@@ -253,8 +305,10 @@ Future<void> showActionDialog(BuildContext context) async {
       ivId: ivId,
       dueDate: dueDate,
       planEntryId: planEntryId,
+      stepLabels: stepsController.text.split('\n'),
     );
   }
   titleController.dispose();
   descriptionController.dispose();
+  stepsController.dispose();
 }

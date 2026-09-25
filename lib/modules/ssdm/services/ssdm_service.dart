@@ -6,6 +6,7 @@ import '../../../core/storage/box_names.dart';
 import '../../../shared/models/client_group.dart';
 import '../../../shared/models/client_type.dart';
 import '../../../shared/models/iv.dart';
+import '../models/action_step.dart';
 import '../models/sales_action.dart';
 import '../models/sales_plan_entry.dart';
 import '../models/ssdm_year.dart';
@@ -179,6 +180,20 @@ class SsdmService extends ChangeNotifier {
         progress: 0,
         createdAt: DateTime.now(),
         history: [],
+        planEntryId: source.planEntryId,
+        // Les étapes sont recopiées, statuts remis à "à faire".
+        steps: source.steps
+            ?.map((s) => ActionStep(
+                  id: _uuid.v4(),
+                  label: s.label,
+                  weight: s.weight,
+                  statusIndex: ActionStepStatus.todo.index,
+                  dueDate: s.dueDate != null
+                      ? DateTime(s.dueDate!.year + (year - source.year),
+                          s.dueDate!.month, s.dueDate!.day)
+                      : null,
+                ))
+            .toList(),
       );
 
   Future<void> updateCaObjective(double caObjective) async {
@@ -329,9 +344,18 @@ class SsdmService extends ChangeNotifier {
     String? clientTypeId,
     DateTime? dueDate,
     String? planEntryId,
+    List<ActionStep>? steps,
+    List<String>? stepLabels,
   }) async {
     final year = _selectedYear;
     if (year == null) return;
+    final builtSteps = steps ??
+        (stepLabels == null
+            ? null
+            : stepLabels
+                .where((l) => l.trim().isNotEmpty)
+                .map((l) => ActionStep(id: _uuid.v4(), label: l.trim()))
+                .toList());
     final action = SalesAction(
       id: _uuid.v4(),
       year: year,
@@ -342,7 +366,9 @@ class SsdmService extends ChangeNotifier {
       clientTypeId: clientTypeId,
       dueDate: dueDate,
       planEntryId: planEntryId,
+      steps: builtSteps,
     );
+    if (action.hasSteps) _syncFromSteps(action, comment: 'Étapes définies');
     await _actions.put(action.id, action);
     notifyListeners();
   }
@@ -375,6 +401,144 @@ class SsdmService extends ChangeNotifier {
   double averageProgress(int year) {
     final actions = actionsFor(year);
     if (actions.isEmpty) return 0;
-    return actions.fold(0.0, (sum, a) => sum + a.progress) / actions.length;
+    return actions.fold(0.0, (sum, a) => sum + a.effectiveProgress) / actions.length;
+  }
+
+  // ------------------------------------------------------------------- Étapes
+
+  /// Recalcule l'avancement et le statut d'une action à partir de ses étapes
+  /// et archive le nouvel avancement dans l'historique.
+  void _syncFromSteps(SalesAction action, {String comment = ''}) {
+    final computed = action.computedProgress;
+    if (computed < 0) return;
+    action.progress = computed;
+    final doneAll = action.activeSteps.isNotEmpty &&
+        action.activeSteps.every((s) => s.status == ActionStepStatus.done);
+    if (doneAll) {
+      action.status = ActionStatus.done;
+    } else if (action.activeSteps.any((s) => !s.status.isClosed)) {
+      action.status = ActionStatus.inProgress;
+    }
+    action.history.add(ActionUpdate(
+      date: DateTime.now(),
+      progress: computed,
+      comment: comment.isEmpty ? 'Avancement calculé depuis les étapes' : comment,
+    ));
+  }
+
+  Future<void> addStep(
+    SalesAction action, {
+    required String label,
+    int weight = 1,
+    DateTime? dueDate,
+  }) async {
+    action.steps ??= <ActionStep>[];
+    action.steps!.add(ActionStep(
+      id: _uuid.v4(),
+      label: label,
+      weight: weight <= 0 ? 1 : weight,
+      dueDate: dueDate,
+    ));
+    _syncFromSteps(action);
+    await action.save();
+    notifyListeners();
+  }
+
+  /// Change le statut d'une étape et resynchronise l'action.
+  Future<void> setStepStatus(
+    SalesAction action,
+    ActionStep step,
+    ActionStepStatus status, {
+    String comment = '',
+  }) async {
+    step.status = status;
+    _syncFromSteps(action, comment: comment);
+    await action.save();
+    notifyListeners();
+  }
+
+  /// Met à jour une étape (libellé, poids, échéance) et resynchronise.
+  Future<void> updateStep(
+    SalesAction action,
+    ActionStep step, {
+    String? label,
+    int? weight,
+    DateTime? dueDate,
+  }) async {
+    if (label != null && label.trim().isNotEmpty) step.label = label.trim();
+    if (weight != null) step.weight = weight <= 0 ? 1 : weight;
+    if (dueDate != null) step.dueDate = dueDate;
+    _syncFromSteps(action);
+    await action.save();
+    notifyListeners();
+  }
+
+  Future<void> deleteStep(SalesAction action, ActionStep step) async {
+    action.steps?.removeWhere((s) => s.id == step.id);
+    if (action.hasSteps) {
+      _syncFromSteps(action, comment: 'Étape supprimée');
+    } else {
+      // Plus d'étapes : retour à l'avancement manuel, inchangé.
+    }
+    await action.save();
+    notifyListeners();
+  }
+
+  /// Déplace une étape (réordonnancement dans la liste).
+  Future<void> moveStep(SalesAction action, int oldIndex, int newIndex) async {
+    final steps = action.steps;
+    if (steps == null || steps.isEmpty) return;
+    if (newIndex > oldIndex) newIndex -= 1;
+    if (oldIndex < 0 || oldIndex >= steps.length) return;
+    final step = steps.removeAt(oldIndex);
+    steps.insert(newIndex.clamp(0, steps.length), step);
+    await action.save();
+    notifyListeners();
+  }
+
+  // -------------------------------------------------- Données pour le radar
+
+  /// Avancement moyen des actions par IV pour une année (0-100).
+  ///
+  /// Ne prend en compte que les actions non annulées rattachées à un IV.
+  /// Les actions d'équipe (sans IV) sont exclues de ce découpage.
+  Map<String, double> progressByIv(int year) {
+    final result = <String, List<int>>{};
+    for (final a in _actions.values.where((a) =>
+        a.year == year &&
+        a.ivId != null &&
+        a.ivId != kAllId &&
+        a.status != ActionStatus.cancelled)) {
+      result[a.ivId!] = [...(result[a.ivId!] ?? <int>[]), a.effectiveProgress];
+    }
+    return result.map((id, values) =>
+        MapEntry(id, values.fold(0.0, (s, v) => s + v) / values.length));
+  }
+
+  /// Avancement moyen des actions liées, par ligne du Sales Plan (0-100).
+  ///
+  /// Seules les lignes de [year] avec au moins une action non annulée
+  /// apparaissent. Null pour une ligne sans actions.
+  Map<String, double?> progressByPlan(int year) {
+    final result = <String, double?>{};
+    for (final entry in _plan.values.where((e) => e.year == year)) {
+      final linked = _actions.values.where((a) =>
+          a.planEntryId == entry.id && a.status != ActionStatus.cancelled);
+      result[entry.id] = linked.isEmpty
+          ? null
+          : linked.fold(0.0, (s, a) => s + a.effectiveProgress) / linked.length;
+    }
+    return result;
+  }
+
+  /// Libellé court d'une ligne de plan (pour les axes du radar).
+  String planLineShortLabel(String planEntryId) {
+    final e = planEntryOf(planEntryId);
+    if (e == null) return '?';
+    final iv = ivOf(e.ivId);
+    final ivPart = (iv?.trigramOrEmpty.isNotEmpty ?? false)
+        ? iv!.trigramOrEmpty
+        : (iv?.name ?? 'Tous');
+    return '$ivPart - ${groupLabel(e.clientGroupId)}';
   }
 }

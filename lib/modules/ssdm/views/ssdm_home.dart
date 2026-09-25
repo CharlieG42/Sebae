@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../services/ssdm_service.dart';
 import 'actions_view.dart';
 import 'create_year_dialog.dart';
@@ -11,7 +11,7 @@ import 'plan_view.dart';
 
 /// Écran principal du module SSDM.
 ///
-/// Une année doit être sélectionnée pour acceder au pilotage
+/// Une année doit être sélectionnée pour accéder au pilotage
 /// (objectif de CA, sales plan, actions).
 class SsdmHome extends StatelessWidget {
   const SsdmHome({super.key});
@@ -38,7 +38,7 @@ class SsdmHome extends StatelessWidget {
 
     final selected = service.selectedYear ?? years.last;
     if (service.selectedYear != selected) {
-      // Premiere ouverture : selectionne la dernière année par défaut.
+      // Première ouverture : sélectionne la dernière année par défaut.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         service.selectYear(selected);
       });
@@ -53,9 +53,9 @@ class SsdmHome extends StatelessWidget {
             YearSelector(years: years, selected: selected),
             const SizedBox(width: 8),
           ],
-          bottom: TabBar(
+          bottom: const TabBar(
             isScrollable: true,
-            tabs: const [
+            tabs: [
               Tab(text: 'Dashboard'),
               Tab(text: 'Objectif CA'),
               Tab(text: 'Sales Plan'),

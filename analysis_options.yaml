@@ -1,0 +1,10 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Les fichier .g.dart generes ne respectent pas toujours les regles.
+    always_declare_return_types: false
+
+analyzer:
+  exclude:
+    - '**/*.g.dart'

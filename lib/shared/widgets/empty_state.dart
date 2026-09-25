@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Etat vide reutilisable avec un bouton d'action optionnel.
+/// État vide réutilisable avec un bouton d'action optionnel.
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,

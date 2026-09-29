@@ -2,6 +2,7 @@ import 'package:hive/hive.dart';
 
 import 'action_step.dart';
 import 'action_update.dart';
+import '../ssdm_constants.dart';
 
 part 'sales_action.g.dart';
 
@@ -18,12 +19,14 @@ enum ActionStatus {
 
 /// Action commerciale / de développement.
 ///
-/// Une action peut être rattachée à un IV précise ([ivId] non null) ou être
-/// une action d'équipe ([ivId] null), commune à toute l'équipe. L'avancement
-/// est suivi via [progress] (0-100) et l'historique des mises à jour.
+/// Une action peut être rattachée à un ou plusieurs IV ([ivIds]) ou être
+/// une action d'équipe ([ivIds] null ou vide), commune à toute l'équipe.
+/// L'avancement est suivi via [progress] (0-100) et l'historique des mises à jour.
 ///
 /// Une action peut être liée à une ligne du Sales Plan ([planEntryId]) afin
 /// de piloter les actions qui concourent à un objectif de CA précis.
+///
+/// Le [revenueAmount] permet de valoriser l'action en chiffre d'affaires.
 @HiveType(typeId: 22)
 class SalesAction extends HiveObject {
   @HiveField(0)
@@ -38,9 +41,10 @@ class SalesAction extends HiveObject {
   @HiveField(3)
   String description;
 
-  /// IV responsable. Null => action commune à l'équipe.
+  /// IV responsables. Null ou vide => action commune à l'équipe.
+  /// Peut contenir plusieurs IDs pour une action partagée.
   @HiveField(4)
-  String? ivId;
+  List<String>? ivIds;
 
   @HiveField(5)
   String? clientGroupId;
@@ -78,12 +82,16 @@ class SalesAction extends HiveObject {
   @HiveField(13)
   List<ActionStep>? steps;
 
+  /// Chiffre d'affaires estimé ou réalisé pour cette action (en euros).
+  @HiveField(14)
+  double revenueAmount;
+
   SalesAction({
     required this.id,
     required this.year,
     required this.title,
     this.description = '',
-    this.ivId,
+    this.ivIds,
     this.clientGroupId,
     this.clientTypeId,
     // 0 = ActionStatus.planned.index (valeur par défaut non const
@@ -95,12 +103,19 @@ class SalesAction extends HiveObject {
     List<ActionUpdate>? history,
     this.planEntryId,
     this.steps,
+    this.revenueAmount = 0,
   })  : createdAt = createdAt ?? DateTime.now(),
         history = history ?? [];
 
   ActionStatus get status => ActionStatus.values[statusIndex];
 
   set status(ActionStatus value) => statusIndex = value.index;
+
+  /// Vrai si l'action est une action d'équipe (pas d'IV assigné).
+  bool get isTeamAction => ivIds == null || ivIds!.isEmpty;
+
+  /// Vrai si l'action est assignée à tous les IV (spécial "Tous").
+  bool get isAllIvs => ivIds != null && ivIds!.contains(kAllId);
 
   /// Enregistre une mise à jour d'avancement.
   void logUpdate(int newProgress, {String comment = ''}) {

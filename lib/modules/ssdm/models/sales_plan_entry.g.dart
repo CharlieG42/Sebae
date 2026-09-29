@@ -19,31 +19,43 @@ class SalesPlanEntryAdapter extends TypeAdapter<SalesPlanEntry> {
     return SalesPlanEntry(
       id: fields[0] as String,
       year: fields[1] as int,
-      ivId: fields[2] as String,
-      clientGroupId: fields[3] as String,
-      clientTypeId: fields[4] as String,
-      targetAmount: fields[5] as double,
-      realizedAmount: fields[6] as double,
+      title: fields[2] as String,
+      ivId: fields[3] as String,
+      ivIds: (fields[4] as List?)?.cast<String>(),
+      clientGroupId: fields[5] as String,
+      clientGroupIds: (fields[6] as List?)?.cast<String>(),
+      clientTypeId: fields[7] as String,
+      clientTypeIds: (fields[8] as List?)?.cast<String>(),
+      targetAmount: fields[9] as double,
+      realizedAmount: fields[10] as double,
     );
   }
 
   @override
   void write(BinaryWriter writer, SalesPlanEntry obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.year)
       ..writeByte(2)
-      ..write(obj.ivId)
+      ..write(obj.title)
       ..writeByte(3)
-      ..write(obj.clientGroupId)
+      ..write(obj.ivId)
       ..writeByte(4)
-      ..write(obj.clientTypeId)
+      ..write(obj.ivIds)
       ..writeByte(5)
-      ..write(obj.targetAmount)
+      ..write(obj.clientGroupId)
       ..writeByte(6)
+      ..write(obj.clientGroupIds)
+      ..writeByte(7)
+      ..write(obj.clientTypeId)
+      ..writeByte(8)
+      ..write(obj.clientTypeIds)
+      ..writeByte(9)
+      ..write(obj.targetAmount)
+      ..writeByte(10)
       ..write(obj.realizedAmount);
   }
 

@@ -114,6 +114,7 @@ class _CreateYearDialogState extends State<_CreateYearDialog> {
                 'Les actions communes (sans IV) sont recopiées, '
                 'avancement remis à zéro.',
               ),
+              controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
             ),
           ],

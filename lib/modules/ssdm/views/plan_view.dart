@@ -5,16 +5,20 @@ import 'package:provider/provider.dart';
 import '../../../shared/models/iv.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../models/sales_plan_entry.dart';
+import '../models/visit.dart';
 import '../services/ssdm_service.dart';
+import '../ssdm_constants.dart';
 import 'action_detail_view.dart';
+import 'visit_detail_view.dart';
+import 'visits_view.dart';
 
 final _eur = NumberFormat.currency(locale: 'fr_FR', symbol: 'EUR');
 
 /// Sales Plan de l'année : objectifs de CA par IV x groupe x type de clients.
 ///
 /// Chaque axe accepte également la valeur "Tous" (ligne globale).
-/// Chaque ligne peut porter des actions liées (bouton liste) et chaque
-/// section IV propose l'ajout direct d'une ligne pour cet IV.
+/// Chaque ligne peut porter des actions liées (bouton liste) et des visites,
+/// et chaque section IV propose l'ajout direct d'une ligne pour cet IV.
 class PlanView extends StatelessWidget {
   const PlanView({super.key});
 
@@ -36,7 +40,7 @@ class PlanView extends StatelessWidget {
         title: 'Sales Plan vide',
         message:
             'Ajoutez des lignes de plan : un objectif de CA par IV, '
-            'par groupe de clients et par type de clients.',
+            'par groupe de clients et par type de clients, avec un titre personnalisé.',
         actionLabel: 'Ajouter une ligne',
         onAction: () => showPlanEntryDialog(context),
       );
@@ -100,6 +104,9 @@ class PlanView extends StatelessWidget {
     List<SalesPlanEntry> entries,
   ) {
     final ivTotal = entries.fold(0.0, (sum, e) => sum + e.targetAmount);
+    final actionTotal = entries.fold(0.0, (sum, e) => sum + service.actionsRevenueForPlan(e.id));
+    final visitTotal = entries.fold<int>(0, (sum, e) => sum + service.visitCountForPlan(e.id));
+    
     return [
       Padding(
         padding: const EdgeInsets.only(top: 8, bottom: 4),
@@ -114,6 +121,26 @@ class PlanView extends StatelessWidget {
             Text(_eur.format(ivTotal),
                 style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(width: 4),
+            // Actions liées à cet IV
+            if (actionTotal > 0)
+              Row(
+                children: [
+                  const Icon(Icons.euro, size: 16),
+                  const SizedBox(width: 2),
+                  Text(_eur.format(actionTotal)),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            // Visites liées à cet IV
+            if (visitTotal > 0)
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today, size: 16),
+                  const SizedBox(width: 2),
+                  Text('$visitTotal'),
+                  const SizedBox(width: 8),
+                ],
+              ),
             // Ajout d'une ligne directement pré-remplie pour cet IV.
             IconButton(
               tooltip: 'Ajouter une ligne pour ${service.ivLabel(ivId)}',
@@ -130,8 +157,9 @@ class PlanView extends StatelessWidget {
             for (final e in entries)
               ListTile(
                 title: Text(
-                  '${service.groupLabel(e.clientGroupId)} - '
-                  '${service.typeLabel(e.clientTypeId)}',
+                  e.title.isNotEmpty 
+                      ? e.title 
+                      : '${service.groupLabel(e.clientGroupId)} - ${service.typeLabel(e.clientTypeId)}',
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,19 +168,40 @@ class PlanView extends StatelessWidget {
                       'Cible : ${_eur.format(e.targetAmount)}'
                       '${e.realizedAmount > 0 ? ' - Réalisé : ${_eur.format(e.realizedAmount)}' : ''}',
                     ),
-                    if (service.actionCountForPlan(e.id) > 0)
-                      Text(
-                        '${service.actionCountForPlan(e.id)} action(s) liée(s)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                    if (service.actionCountForPlan(e.id) > 0 || service.visitCountForPlan(e.id) > 0)
+                      Row(
+                        children: [
+                          if (service.actionCountForPlan(e.id) > 0)
+                            Text(
+                              '${service.actionCountForPlan(e.id)} action(s)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          if (service.actionCountForPlan(e.id) > 0 && service.visitCountForPlan(e.id) > 0)
+                            const Text(' - '),
+                          if (service.visitCountForPlan(e.id) > 0)
+                            Text(
+                              '${service.visitCountForPlan(e.id)} visite(s)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                            ),
+                        ],
                       ),
                   ],
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Visites liées à cette ligne.
+                    _VisitsBadgeButton(
+                      count: service.visitCountForPlan(e.id),
+                      onPressed: () =>
+                          _showPlanEntryVisitsDialog(context, e),
+                    ),
                     // Actions liées à cette ligne.
                     _ActionsBadgeButton(
                       count: service.actionCountForPlan(e.id),
@@ -174,6 +223,50 @@ class PlanView extends StatelessWidget {
         ),
       ),
     ];
+  }
+}
+
+/// Bouton d'accès aux visites liées, avec badge de nombre.
+class _VisitsBadgeButton extends StatelessWidget {
+  const _VisitsBadgeButton({required this.count, required this.onPressed});
+
+  final int count;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          tooltip: 'Visites liées à cette ligne',
+          icon: const Icon(Icons.calendar_today),
+          onPressed: onPressed,
+        ),
+        if (count > 0)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondary,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              child: Text(
+                count > 9 ? '9+' : '$count',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 
@@ -217,6 +310,188 @@ class _ActionsBadgeButton extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Dialogue "Visites liées à une ligne de plan".
+Future<void> _showPlanEntryVisitsDialog(
+  BuildContext context,
+  SalesPlanEntry entry,
+) async {
+  final service = context.read<SsdmService>();
+  final visits = service.visitsFor(service.selectedYear, planEntryId: entry.id);
+
+  if (visits.isEmpty) {
+    // Si aucune visite, proposer d'en créer une directement
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Aucune visite liée'),
+        content: Text(
+          'Aucune visite n\'est liée à la ligne "${entry.title.isNotEmpty ? entry.title : service.planLineLabel(entry.id)}".\n\nSouhaitez-vous en créer une ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Créer une visite'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final navigatorContext = context;
+      Navigator.of(navigatorContext).pop();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showVisitDialog(navigatorContext, presetPlanEntryId: entry.id, useRootNavigator: true);
+      });
+    }
+    return;
+  }
+
+  await showDialog<void>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Visites de la ligne'),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              entry.title.isNotEmpty ? entry.title : service.planLineLabel(entry.id),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+
+            // Liste des visites
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final visit in visits)
+                    ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: _VisitStatusChip(status: visit.status),
+                      title: Text(
+                        visit.title.isNotEmpty ? visit.title :
+                        'Visite du ${DateFormat('dd/MM/yyyy').format(visit.appointmentDate)}',
+                      ),
+                      subtitle: Text(
+                        '${service.clientLabel(visit.clientId)} - ${service.ivIdsLabel(visit.ivIds)}',
+                      ),
+                      trailing: IconButton(
+                        tooltip: 'Délier',
+                        icon: const Icon(Icons.link_off, size: 18),
+                        onPressed: () {
+                          visit.planEntryIds = null;
+                          service.updateVisit(visit);
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => VisitDetailView(visitId: visit.id),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 24),
+
+            // Création rapide d'une visite liée
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('Nouvelle visite pour cette ligne'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      showVisitDialog(context, presetPlanEntryId: entry.id);
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+            // Navigation vers l'onglet Visites
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Voir dans l\'onglet Visites'),
+                onPressed: () {
+                  service.filterVisitsByPlanEntry(entry.id);
+                  Navigator.of(context).pop();
+                  service.goToVisitsTab();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Fermer'),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Puce d'état de visite (pour la liste des visites dans le dialogue).
+class _VisitStatusChip extends StatelessWidget {
+  const _VisitStatusChip({required this.status});
+
+  final VisitStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    Color color = Colors.grey;
+    switch (status) {
+      case VisitStatus.planned:
+        color = Colors.blue;
+      case VisitStatus.confirmed:
+        color = Colors.lightBlue;
+      case VisitStatus.inProgress:
+        color = Colors.orange;
+      case VisitStatus.done:
+        color = Colors.green;
+      case VisitStatus.cancelled:
+        color = Colors.red;
+      case VisitStatus.postponed:
+        color = Colors.purple;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        status.label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }
@@ -266,12 +541,14 @@ Future<void> showPlanEntryDialog(
         clientGroupId: result.clientGroupId,
         clientTypeId: result.clientTypeId,
         targetAmount: result.targetAmount,
+        title: result.title,
       );
     } else {
       entry.ivId = result.ivId;
       entry.clientGroupId = result.clientGroupId;
       entry.clientTypeId = result.clientTypeId;
       entry.targetAmount = result.targetAmount;
+      entry.title = result.title;
       await service.updatePlanEntry(entry);
     }
   }
@@ -293,26 +570,38 @@ class _PlanEntryDialog extends StatefulWidget {
 }
 
 class _PlanEntryDialogState extends State<_PlanEntryDialog> {
-  late String _ivId;
-  late String _groupId;
-  late String _typeId;
+  late List<String> _selectedIvIds;
+  late List<String> _selectedGroupIds;
+  late List<String> _selectedTypeIds;
   late final TextEditingController _amount;
+  late final TextEditingController _title;
 
   @override
   void initState() {
     super.initState();
     final e = widget.entry;
-    _ivId = e?.ivId ?? widget.presetIvId ?? kAllId;
-    _groupId = e?.clientGroupId ?? kAllId;
-    _typeId = e?.clientTypeId ?? kAllId;
+    // Pour compatibilité : si ivIds existe, on l'utilise, sinon on convertit ivId en liste
+    _selectedIvIds = e?.ivIds ?? (e != null && e.ivId.isNotEmpty ? [e.ivId] : []);
+    _selectedGroupIds = e?.clientGroupIds ?? (e != null && e.clientGroupId.isNotEmpty ? [e.clientGroupId] : []);
+    _selectedTypeIds = e?.clientTypeIds ?? (e != null && e.clientTypeId.isNotEmpty ? [e.clientTypeId] : []);
+    
+    // Si présélection par presetIvId
+    if (widget.presetIvId != null && _selectedIvIds.isEmpty) {
+      _selectedIvIds = [widget.presetIvId!];
+    }
+    
     _amount = TextEditingController(
       text: e == null ? '' : e.targetAmount.toStringAsFixed(0),
+    );
+    _title = TextEditingController(
+      text: e?.title ?? '',
     );
   }
 
   @override
   void dispose() {
     _amount.dispose();
+    _title.dispose();
     super.dispose();
   }
 
@@ -325,12 +614,22 @@ class _PlanEntryDialogState extends State<_PlanEntryDialog> {
       );
       return;
     }
+    
+    // Pour compatibilité, on garde les anciens champs avec le premier élément
+    final ivId = _selectedIvIds.isNotEmpty ? _selectedIvIds.first : kAllId;
+    final clientGroupId = _selectedGroupIds.isNotEmpty ? _selectedGroupIds.first : kAllId;
+    final clientTypeId = _selectedTypeIds.isNotEmpty ? _selectedTypeIds.first : kAllId;
+    
     Navigator.of(context).pop(SalesPlanEntry(
       id: widget.entry?.id ?? '',
       year: widget.entry?.year ?? 0,
-      ivId: _ivId,
-      clientGroupId: _groupId,
-      clientTypeId: _typeId,
+      title: _title.text.trim(),
+      ivId: ivId,
+      ivIds: _selectedIvIds.isEmpty ? null : _selectedIvIds,
+      clientGroupId: clientGroupId,
+      clientGroupIds: _selectedGroupIds.isEmpty ? null : _selectedGroupIds,
+      clientTypeId: clientTypeId,
+      clientTypeIds: _selectedTypeIds.isEmpty ? null : _selectedTypeIds,
       targetAmount: amount,
     ));
   }
@@ -343,45 +642,85 @@ class _PlanEntryDialogState extends State<_PlanEntryDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DropdownButtonFormField<String>(
-            initialValue: _ivId,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'IV'),
-            items: [
-              const DropdownMenuItem(value: kAllId, child: Text('Tous')),
-              for (final iv in service.ivs)
-                DropdownMenuItem(value: iv.id, child: Text(_ivDropdownLabel(iv))),
-            ],
-            onChanged: (v) => setState(() => _ivId = v ?? _ivId),
+          // Titre
+          TextField(
+            controller: _title,
+            autofocus: widget.entry == null,
+            decoration: const InputDecoration(
+              labelText: 'Titre (optionnel)',
+              border: OutlineInputBorder(),
+              hintText: 'Ex: Développement secteur Nord, Fidélisation clients existants...',
+            ),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: _groupId,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Groupe de clients'),
-            items: [
-              const DropdownMenuItem(value: kAllId, child: Text('Tous')),
-              for (final g in service.clientGroups)
-                DropdownMenuItem(value: g.id, child: Text(g.name)),
-            ],
-            onChanged: (v) => setState(() => _groupId = v ?? _groupId),
+          // IV avec sélection multiple par cases à cocher
+          InkWell(
+            onTap: () async {
+              final selected = await _showIvMultiSelectDialog(
+                context,
+                selectedIds: _selectedIvIds,
+                service: service,
+              );
+              if (selected != null) {
+                setState(() => _selectedIvIds = selected);
+              }
+            },
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'IV(s)',
+                border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.expand_more),
+              ),
+              child: _buildIvSelectionDisplay(_selectedIvIds, service),
+            ),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: _typeId,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Type de clients'),
-            items: [
-              const DropdownMenuItem(value: kAllId, child: Text('Tous')),
-              for (final t in service.clientTypes)
-                DropdownMenuItem(value: t.id, child: Text(t.name)),
-            ],
-            onChanged: (v) => setState(() => _typeId = v ?? _typeId),
+          // Groupe de clients avec sélection multiple par cases à cocher
+          InkWell(
+            onTap: () async {
+              final selected = await _showClientGroupMultiSelectDialog(
+                context,
+                selectedIds: _selectedGroupIds,
+                service: service,
+              );
+              if (selected != null) {
+                setState(() => _selectedGroupIds = selected);
+              }
+            },
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'Groupe(s) de clients',
+                border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.expand_more),
+              ),
+              child: _buildClientGroupSelectionDisplay(_selectedGroupIds, service),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Type de clients avec sélection multiple par cases à cocher
+          InkWell(
+            onTap: () async {
+              final selected = await _showClientTypeMultiSelectDialog(
+                context,
+                selectedIds: _selectedTypeIds,
+                service: service,
+              );
+              if (selected != null) {
+                setState(() => _selectedTypeIds = selected);
+              }
+            },
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'Type(s) de clients',
+                border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.expand_more),
+              ),
+              child: _buildClientTypeSelectionDisplay(_selectedTypeIds, service),
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _amount,
-            autofocus: widget.entry == null,
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
@@ -464,7 +803,7 @@ class _PlanEntryActionsDialogState extends State<_PlanEntryActionsDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${service.planLineLabel(entry.id)} - ${_eur.format(entry.targetAmount)}',
+              '${entry.title.isNotEmpty ? entry.title : service.planLineLabel(entry.id)} - ${_eur.format(entry.targetAmount)}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -487,7 +826,7 @@ class _PlanEntryActionsDialogState extends State<_PlanEntryActionsDialog> {
                         leading: _MiniStatusDot(progress: action.effectiveProgress),
                         title: Text(action.title),
                         subtitle: Text(
-                          '${service.ivLabel(action.ivId)} - ${action.status.label} - ${action.progress} %',
+                          '${service.ivIdsLabel(action.ivIds)} - ${action.status.label} - ${action.effectiveProgress} % - ${_eur.format(action.revenueAmount)}',
                         ),
                         trailing: IconButton(
                           tooltip: 'Délier',
@@ -594,13 +933,288 @@ class _PlanEntryActionsDialogState extends State<_PlanEntryActionsDialog> {
     final entry = widget.entry;
     await service.addAction(
       title: title,
-      ivId: entry.ivId == kAllId ? null : entry.ivId,
+      ivIds: entry.ivId == kAllId ? null : [entry.ivId],
       clientGroupId: entry.clientGroupId == kAllId ? null : entry.clientGroupId,
       clientTypeId: entry.clientTypeId == kAllId ? null : entry.clientTypeId,
       planEntryId: entry.id,
     );
     _newActionController.clear();
   }
+}
+
+// Dialogues de sélection pour le Sales Plan
+
+/// Affiche l'affichage de la sélection des IV pour le Sales Plan.
+Widget _buildIvSelectionDisplay(List<String>? ivIds, SsdmService service) {
+  if (ivIds == null || ivIds.isEmpty) {
+    return const Text('Aucun', style: TextStyle(color: Colors.grey));
+  }
+  if (ivIds.contains(kAllId)) {
+    return const Text('Tous les IV');
+  }
+  if (ivIds.length == 1) {
+    return Text(_ivDropdownLabel(service.ivOf(ivIds.first) ?? service.ivs.firstWhere((iv) => iv.id == ivIds.first, orElse: () => service.ivs.first)));
+  }
+  return Text('${ivIds.length} IV sélectionnés');
+}
+
+/// Affiche l'affichage de la sélection des Groupes de clients pour le Sales Plan.
+Widget _buildClientGroupSelectionDisplay(List<String>? groupIds, SsdmService service) {
+  if (groupIds == null || groupIds.isEmpty) {
+    return const Text('Aucun', style: TextStyle(color: Colors.grey));
+  }
+  if (groupIds.length == 1) {
+    return Text(service.groupOf(groupIds.first)?.name ?? groupIds.first);
+  }
+  return Text('${groupIds.length} groupes sélectionnés');
+}
+
+/// Affiche l'affichage de la sélection des Types de clients pour le Sales Plan.
+Widget _buildClientTypeSelectionDisplay(List<String>? typeIds, SsdmService service) {
+  if (typeIds == null || typeIds.isEmpty) {
+    return const Text('Aucun', style: TextStyle(color: Colors.grey));
+  }
+  if (typeIds.length == 1) {
+    return Text(service.typeOf(typeIds.first)?.name ?? typeIds.first);
+  }
+  return Text('${typeIds.length} types sélectionnés');
+}
+
+/// Dialogue de sélection multiple d'IV avec cases à cocher pour le Sales Plan.
+Future<List<String>?> _showIvMultiSelectDialog(
+  BuildContext context, {
+  required List<String> selectedIds,
+  required SsdmService service,
+}) async {
+  final selectedSet = selectedIds.toSet();
+  
+  return await showDialog<List<String>>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('Sélectionner les IV'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Option "Tous"
+              CheckboxListTile(
+                value: selectedSet.contains(kAllId),
+                title: const Text('Tous les IV'),
+                subtitle: const Text('Sélectionner/désélectionner tous'),
+                controlAffinity: ListTileControlAffinity.leading,
+                onChanged: (checked) {
+                  setState(() {
+                    if (checked == true) {
+                      selectedSet.clear();
+                      selectedSet.add(kAllId);
+                    } else {
+                      selectedSet.remove(kAllId);
+                    }
+                  });
+                },
+              ),
+              const Divider(),
+              // Liste des IV
+              Expanded(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final iv in service.ivs)
+                      CheckboxListTile(
+                        value: selectedSet.contains(iv.id),
+                        title: Text(_ivDropdownLabel(iv)),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        onChanged: (checked) {
+                          setState(() {
+                            if (checked == true) {
+                              selectedSet.add(iv.id);
+                              selectedSet.remove(kAllId); // Désélectionner "Tous" si on sélectionne un IV spécifique
+                            } else {
+                              selectedSet.remove(iv.id);
+                            }
+                          });
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, selectedIds),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, selectedSet.isEmpty ? null : selectedSet.toList()),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Dialogue de sélection multiple de Groupes de clients avec cases à cocher pour le Sales Plan.
+Future<List<String>?> _showClientGroupMultiSelectDialog(
+  BuildContext context, {
+  required List<String> selectedIds,
+  required SsdmService service,
+}) async {
+  final selectedSet = selectedIds.toSet();
+  
+  return await showDialog<List<String>>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('Sélectionner les Groupes de clients'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Option "Tous"
+              CheckboxListTile(
+                value: selectedSet.contains(kAllId),
+                title: const Text('Tous les groupes'),
+                subtitle: const Text('Sélectionner/désélectionner tous'),
+                controlAffinity: ListTileControlAffinity.leading,
+                onChanged: (checked) {
+                  setState(() {
+                    if (checked == true) {
+                      selectedSet.clear();
+                      selectedSet.add(kAllId);
+                    } else {
+                      selectedSet.remove(kAllId);
+                    }
+                  });
+                },
+              ),
+              const Divider(),
+              // Liste des groupes
+              Expanded(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final g in service.clientGroups)
+                      CheckboxListTile(
+                        value: selectedSet.contains(g.id),
+                        title: Text(g.name),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        onChanged: (checked) {
+                          setState(() {
+                            if (checked == true) {
+                              selectedSet.add(g.id);
+                              selectedSet.remove(kAllId);
+                            } else {
+                              selectedSet.remove(g.id);
+                            }
+                          });
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, selectedIds),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, selectedSet.isEmpty ? null : selectedSet.toList()),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Dialogue de sélection multiple de Types de clients avec cases à cocher pour le Sales Plan.
+Future<List<String>?> _showClientTypeMultiSelectDialog(
+  BuildContext context, {
+  required List<String> selectedIds,
+  required SsdmService service,
+}) async {
+  final selectedSet = selectedIds.toSet();
+  
+  return await showDialog<List<String>>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('Sélectionner les Types de clients'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Option "Tous"
+              CheckboxListTile(
+                value: selectedSet.contains(kAllId),
+                title: const Text('Tous les types'),
+                subtitle: const Text('Sélectionner/désélectionner tous'),
+                controlAffinity: ListTileControlAffinity.leading,
+                onChanged: (checked) {
+                  setState(() {
+                    if (checked == true) {
+                      selectedSet.clear();
+                      selectedSet.add(kAllId);
+                    } else {
+                      selectedSet.remove(kAllId);
+                    }
+                  });
+                },
+              ),
+              const Divider(),
+              // Liste des types
+              Expanded(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final t in service.clientTypes)
+                      CheckboxListTile(
+                        value: selectedSet.contains(t.id),
+                        title: Text(t.name),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        onChanged: (checked) {
+                          setState(() {
+                            if (checked == true) {
+                              selectedSet.add(t.id);
+                              selectedSet.remove(kAllId);
+                            } else {
+                              selectedSet.remove(t.id);
+                            }
+                          });
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, selectedIds),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, selectedSet.isEmpty ? null : selectedSet.toList()),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _MiniStatusDot extends StatelessWidget {

@@ -8,11 +8,13 @@ import 'create_year_dialog.dart';
 import 'dashboard_view.dart';
 import 'objective_view.dart';
 import 'plan_view.dart';
+import 'visit_frame_view.dart';
+import 'visits_view.dart';
 
 /// Écran principal du module SSDM.
 ///
 /// Une année doit être sélectionnée pour accéder au pilotage
-/// (objectif de CA, sales plan, actions).
+/// (objectif de CA, sales plan, actions, visites).
 ///
 /// Le bouton "Nouvelle année" est volontairement réservé aux onglets
 /// Dashboard et Objectif CA (voir ces vues) : il ne se superpose plus
@@ -36,7 +38,7 @@ class _SsdmHomeState extends State<SsdmHome>
     if (service != _service) {
       _service = service;
       _tabController?.dispose();
-      _tabController = TabController(length: 4, vsync: this);
+      _tabController = TabController(length: 6, vsync: this);
       service.tabController = _tabController;
     }
   }
@@ -61,7 +63,7 @@ class _SsdmHomeState extends State<SsdmHome>
           title: 'Aucune année créée',
           message:
               'Commencez par créer une année de gestion pour définir '
-              'l\'objectif de CA, le sales plan et les actions.',
+              'l\'objectif de CA, le sales plan, les actions et les visites.',
           actionLabel: 'Créer une nouvelle année',
           onAction: () => showCreateYearDialog(context),
         ),
@@ -85,6 +87,8 @@ class _SsdmHomeState extends State<SsdmHome>
             Tab(text: 'Objectif CA'),
             Tab(text: 'Sales Plan'),
             Tab(text: 'Actions'),
+            Tab(text: 'Visites'),
+            Tab(text: 'Trames de Visite'),
           ],
         ),
       ),
@@ -95,6 +99,8 @@ class _SsdmHomeState extends State<SsdmHome>
           ObjectiveView(),
           PlanView(),
           ActionsView(),
+          VisitsView(),
+          VisitFrameView(),
         ],
       ),
     );

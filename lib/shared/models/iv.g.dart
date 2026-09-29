@@ -19,6 +19,7 @@ class IvAdapter extends TypeAdapter<Iv> {
     return Iv(
       id: fields[0] as String,
       name: fields[1] as String,
+      trigram: fields[3] as String?,
       active: fields[2] as bool,
     );
   }
@@ -26,11 +27,13 @@ class IvAdapter extends TypeAdapter<Iv> {
   @override
   void write(BinaryWriter writer, Iv obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.name)
+      ..writeByte(3)
+      ..write(obj.trigram)
       ..writeByte(2)
       ..write(obj.active);
   }

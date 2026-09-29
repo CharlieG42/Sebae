@@ -26,6 +26,7 @@ class DashboardView extends StatelessWidget {
     final realized = service.realizedTotal(year);
     final avgProgress = service.averageProgress(year);
     final actions = service.actionsFor(year);
+    final totalRevenue = service.actionsRevenueTotal(year);
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
@@ -86,6 +87,14 @@ class DashboardView extends StatelessWidget {
                   subtitle: 'terminées / total',
                 ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MetricCard(
+                  label: 'CA Actions estimé',
+                  value: _eur.format(totalRevenue),
+                  subtitle: 'Total des actions',
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -134,7 +143,7 @@ class DashboardView extends StatelessWidget {
               return ListTile(
                 leading: _StatusDot(progress: a.effectiveProgress),
                 title: Text(a.title),
-                subtitle: Text(service.ivLabel(a.ivId)),
+                subtitle: Text(service.ivIdsLabel(a.ivIds)),
                 trailing: Text('${a.effectiveProgress} %'),
               );
             }),

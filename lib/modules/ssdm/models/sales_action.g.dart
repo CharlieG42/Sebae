@@ -21,7 +21,7 @@ class SalesActionAdapter extends TypeAdapter<SalesAction> {
       year: fields[1] as int,
       title: fields[2] as String,
       description: fields[3] as String,
-      ivId: fields[4] as String?,
+      ivIds: (fields[4] as List?)?.cast<String>(),
       clientGroupId: fields[5] as String?,
       clientTypeId: fields[6] as String?,
       statusIndex: fields[7] as int,
@@ -31,13 +31,14 @@ class SalesActionAdapter extends TypeAdapter<SalesAction> {
       history: (fields[11] as List?)?.cast<ActionUpdate>(),
       planEntryId: fields[12] as String?,
       steps: (fields[13] as List?)?.cast<ActionStep>(),
+      revenueAmount: fields[14] as double,
     );
   }
 
   @override
   void write(BinaryWriter writer, SalesAction obj) {
     writer
-      ..writeByte(14)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +48,7 @@ class SalesActionAdapter extends TypeAdapter<SalesAction> {
       ..writeByte(3)
       ..write(obj.description)
       ..writeByte(4)
-      ..write(obj.ivId)
+      ..write(obj.ivIds)
       ..writeByte(5)
       ..write(obj.clientGroupId)
       ..writeByte(6)
@@ -65,7 +66,9 @@ class SalesActionAdapter extends TypeAdapter<SalesAction> {
       ..writeByte(12)
       ..write(obj.planEntryId)
       ..writeByte(13)
-      ..write(obj.steps);
+      ..write(obj.steps)
+      ..writeByte(14)
+      ..write(obj.revenueAmount);
   }
 
   @override

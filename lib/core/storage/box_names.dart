@@ -12,18 +12,28 @@ abstract final class BoxNames {
   static const ivs = 'shared_ivs';
   static const clientGroups = 'shared_client_groups';
   static const clientTypes = 'shared_client_types';
+  static const clients = 'shared_clients';
+  static const contacts = 'shared_contacts';
+  static const productRanges = 'shared_product_ranges';
 
   // --- Module SSDM ---
   static const ssdmYears = 'ssdm_years';
   static const ssdmPlan = 'ssdm_plan';
   static const ssdmActions = 'ssdm_actions';
+  static const ssdmVisits = 'ssdm_visits';
+  static const ssdmVisitFrames = 'ssdm_visit_frames';
 
   static const all = [
     ivs,
     clientGroups,
     clientTypes,
+    clients,
+    contacts,
+    productRanges,
     ssdmYears,
     ssdmPlan,
     ssdmActions,
+    ssdmVisits,
+    ssdmVisitFrames,
   ];
 }

@@ -4,7 +4,10 @@ import 'package:provider/provider.dart';
 
 import '../models/action_step.dart';
 import '../models/sales_action.dart';
+import '../models/visit.dart';
 import '../services/ssdm_service.dart';
+import 'visit_detail_view.dart';
+import 'visits_view.dart';
 
 final _dateFmt = DateFormat('dd/MM/yyyy HH:mm');
 final _dayFmt = DateFormat('dd/MM/yyyy');
@@ -65,13 +68,70 @@ class ActionDetailView extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            '${service.ivLabel(action.ivId)} - ${action.status.label}',
-            style: Theme.of(context).textTheme.titleSmall,
+          // Titre et informations principales
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action.title,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.euro, size: 16),
+                        const SizedBox(width: 2),
+                        Text(
+                          'CA estimé : ${_eur.format(action.revenueAmount)}',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          
+          // IV(s), statut, échéance
+          Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(Icons.people, size: 16),
+                    const SizedBox(width: 4),
+                    Text(service.ivIdsLabel(action.ivIds)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(Icons.flag, size: 16),
+                    const SizedBox(width: 4),
+                    Text(action.status.label),
+                  ],
+                ),
+              ),
+            ],
           ),
           if (action.dueDate != null)
-            Text('Échéance : ${_dateFmt.format(action.dueDate!)}'),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, size: 16),
+                const SizedBox(width: 4),
+                Text('Échéance : ${_dateFmt.format(action.dueDate!)}'),
+              ],
+            ),
           const SizedBox(height: 8),
+          
+          // Badges d'avertissement
           Wrap(
             spacing: 8,
             runSpacing: 4,
@@ -80,10 +140,69 @@ class ActionDetailView extends StatelessWidget {
               if (action.isLate) _WarningChip(color: Colors.orange, label: 'En retard', icon: Icons.schedule),
             ],
           ),
+          
           if (action.description.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(action.description),
           ],
+          
+          // Total CA des actions liées si cette action est liée à une ligne
+          if (action.planEntryId != null) ...[
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.table_chart, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Ligne Sales Plan : ${service.planLineLabel(action.planEntryId!)}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.euro, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          'CA des actions de cette ligne : ${_eur.format(service.actionsRevenueForPlan(action.planEntryId!))}',
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.checklist, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${service.actionCountForPlan(action.planEntryId!)} action(s) liée(s)',
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.calendar_today, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${service.visitCountForPlan(action.planEntryId!)} visite(s) liée(s)',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          
+          const Divider(height: 32),
+
+          // --- Visites liées ---
+          _VisitsSection(action: action),
           const Divider(height: 32),
 
           // --- Ligne du Sales Plan liée ---
@@ -109,7 +228,7 @@ class ActionDetailView extends StatelessWidget {
                   DropdownMenuItem(
                     value: e.id,
                     child: Text(
-                      '${service.planLineLabel(e.id)} (${_eur.format(e.targetAmount)})',
+                      '${e.title.isNotEmpty ? e.title : service.planLineLabel(e.id)} (${_eur.format(e.targetAmount)})',
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -120,14 +239,26 @@ class ActionDetailView extends StatelessWidget {
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  icon: const Icon(Icons.open_in_new),
-                  label: const Text('Voir dans l\'onglet Sales Plan'),
-                  onPressed: () {
-                    service.filterActionsByPlan(null);
-                    Navigator.of(context).pop();
-                    service.goToPlanTab();
-                  },
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    TextButton.icon(
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('Voir dans l\'onglet Sales Plan'),
+                      onPressed: () {
+                        service.filterActionsByPlan(null);
+                        Navigator.of(context).pop();
+                        service.goToPlanTab();
+                      },
+                    ),
+                    FilledButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: const Text('Créer une visite'),
+                      onPressed: () {
+                        showVisitDialog(context, presetActionId: action.id);
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -137,7 +268,11 @@ class ActionDetailView extends StatelessWidget {
           // --- Étapes pondérées ---
           _StepsSection(action: action),
           const Divider(height: 32),
-
+          
+          // --- Chiffre d'affaires ---
+          _RevenueSection(action: action),
+          const Divider(height: 32),
+          
           _ProgressSection(action: action),
           const Divider(height: 32),
           Text('Historique', style: Theme.of(context).textTheme.titleMedium),
@@ -162,6 +297,184 @@ class ActionDetailView extends StatelessWidget {
               ),
         ],
       ),
+    );
+  }
+}
+
+/// Section des visites liées à l'action.
+class _VisitsSection extends StatelessWidget {
+  const _VisitsSection({required this.action});
+
+  final SalesAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final service = context.read<SsdmService>();
+    final visits = service.visitsFor(service.selectedYear, actionId: action.id);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                visits.isEmpty 
+                    ? 'Visites liées'
+                    : 'Visites liées (${visits.length})',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            FilledButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text('Ajouter'),
+              onPressed: () => showVisitDialog(context, presetActionId: action.id),
+            ),
+          ],
+        ),
+        if (visits.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text('Aucune visite liée à cette action pour le moment.'),
+          )
+        else
+          Column(
+            children: [
+              for (final visit in visits)
+                Card(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(12),
+                    leading: _VisitStatusChip(status: visit.status),
+                    title: Text(
+                      visit.title.isNotEmpty 
+                          ? visit.title 
+                          : 'Visite du ${_dayFmt.format(visit.appointmentDate)}',
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${service.clientLabel(visit.clientId)} - ${service.ivIdsLabel(visit.ivIds)}'),
+                        Text(_dateFmt.format(visit.appointmentDate)),
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.open_in_new),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => VisitDetailView(visitId: visit.id),
+                        ),
+                      ),
+                    ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => VisitDetailView(visitId: visit.id),
+                      ),
+                    ),
+                  ),
+                ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.open_in_new),
+                  label: const Text('Voir toutes les visites'),
+                  onPressed: () {
+                    service.filterVisitsByAction(action.id);
+                    Navigator.of(context).pop();
+                    service.goToVisitsTab();
+                  },
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+/// Section d'édition du chiffre d'affaires.
+class _RevenueSection extends StatefulWidget {
+  const _RevenueSection({required this.action});
+
+  final SalesAction action;
+
+  @override
+  State<_RevenueSection> createState() => _RevenueSectionState();
+}
+
+class _RevenueSectionState extends State<_RevenueSection> {
+  final _revenueController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _revenueController.text = widget.action.revenueAmount.toStringAsFixed(2);
+  }
+
+  @override
+  void dispose() {
+    _revenueController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = context.read<SsdmService>();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Chiffre d\'affaires',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Valorisez cette action en chiffre d\'affaires pour suivre la contribution aux objectifs.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _revenueController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'CA estimé (EUR)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: () async {
+                final scaffoldContext = context;
+                final revenue = double.tryParse(
+                  _revenueController.text.replaceAll(',', '.'),
+                ) ?? 0;
+                await service.updateActionRevenue(widget.action, revenue);
+                if (mounted) {
+                  ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                    SnackBar(
+                      content: Text('CA mis à jour : ${_eur.format(revenue)}'),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Mettre à jour'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -581,6 +894,48 @@ class _ProgressSectionState extends State<_ProgressSection> {
           label: const Text('Enregistrer l\'avancement'),
         ),
       ],
+    );
+  }
+}
+
+/// Puce d'état de visite (pour la section Visites).
+class _VisitStatusChip extends StatelessWidget {
+  const _VisitStatusChip({required this.status});
+
+  final VisitStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    Color color = Colors.grey;
+    switch (status) {
+      case VisitStatus.planned:
+        color = Colors.blue;
+      case VisitStatus.confirmed:
+        color = Colors.lightBlue;
+      case VisitStatus.inProgress:
+        color = Colors.orange;
+      case VisitStatus.done:
+        color = Colors.green;
+      case VisitStatus.cancelled:
+        color = Colors.red;
+      case VisitStatus.postponed:
+        color = Colors.purple;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        status.label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

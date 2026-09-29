@@ -288,6 +288,20 @@ class _VisitCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 8),
+              if (visit.hasVisitFrame)
+                Row(
+                  children: [
+                    const Icon(Icons.description, size: 16),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Trame: ${service.visitFrameOf(visit.visitFrameId)?.name ?? '?'}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 8),
               if (visit.hasDocuments)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,6 +467,7 @@ Future<void> showVisitDialog(
         actionId: result.actionId,
         productRangeIds: result.productRangeIds,
         documentPaths: result.documentPaths,
+        visitFrameId: result.visitFrameId,
         title: result.title,
         appointmentDate: result.appointmentDate,
         estimatedDuration: result.estimatedDuration,
@@ -470,6 +485,7 @@ Future<void> showVisitDialog(
       visit.actionIds = result.actionIds;
       visit.productRangeIds = result.productRangeIds;
       visit.documentPaths = result.documentPaths;
+      visit.visitFrameId = result.visitFrameId;
       visit.title = result.title;
       visit.appointmentDate = result.appointmentDate;
       visit.estimatedDuration = result.estimatedDuration;
@@ -739,6 +755,7 @@ class _VisitDialogState extends State<_VisitDialog> {
   late String _location;
   late List<String>? _productRangeIds;
   late List<String>? _documentPaths;
+  late String? _visitFrameId;
   late String _notesBefore;
   late String _notesDuring;
   late String _notesAfter;
@@ -768,6 +785,7 @@ class _VisitDialogState extends State<_VisitDialog> {
     _location = v?.location ?? '';
     _productRangeIds = v?.productRangeIds ?? [];
     _documentPaths = v?.documentPaths ?? [];
+    _visitFrameId = v?.visitFrameId;
     _notesBefore = v?.notesBefore ?? '';
     _notesDuring = v?.notesDuring ?? '';
     _notesAfter = v?.notesAfter ?? '';
@@ -1066,6 +1084,26 @@ class _VisitDialogState extends State<_VisitDialog> {
 
               const SizedBox(height: 12),
 
+              // Trame de visite
+              DropdownButtonFormField<String?>(
+                initialValue: _visitFrameId,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Trame de visite',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('Aucune')),
+                  for (final frame in service.visitFrames)
+                    DropdownMenuItem(
+                      value: frame.id,
+                      child: Text(frame.name),
+                    ),
+                ],
+                onChanged: (v) => setState(() => _visitFrameId = v),
+              ),
+              const SizedBox(height: 12),
+
               // Statut
               DropdownButtonFormField<VisitStatus>(
                 initialValue: _status,
@@ -1176,6 +1214,7 @@ class _VisitDialogState extends State<_VisitDialog> {
       location: _location,
       productRangeIds: _productRangeIds,
       documentPaths: _documentPaths,
+      visitFrameId: _visitFrameId,
       themes: const [],
       notesBefore: _notesBefore,
       notesDuring: _notesDuring,

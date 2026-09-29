@@ -129,6 +129,21 @@ class VisitDetailView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
+            // Trame de visite
+            if (visit.hasVisitFrame)
+              _DetailCard(
+                icon: Icons.description,
+                title: 'Trame de visite',
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.description_outlined),
+                    title: Text(service.visitFrameOf(visit.visitFrameId)?.name ?? '?'),
+                    subtitle: const Text('Trame associée'),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 12),
+
             // Localisation
             if (visit.location.isNotEmpty)
               _DetailCard(

@@ -43,18 +43,6 @@ abstract final class SsdmTabs {
 class SsdmService extends ChangeNotifier {
   static const _uuid = Uuid();
 
-  final Box<SsdmYear> _years;
-  final Box<SalesPlanEntry> _plan;
-  final Box<SalesAction> _actions;
-  final Box<Visit> _visits;
-  final Box<VisitFrame> _visitFrames;
-  final Box<Iv> _ivs;
-  final Box<ClientGroup> _groups;
-  final Box<ClientType> _types;
-  final Box<Client> _clients;
-  final Box<Contact> _contacts;
-  final Box<ProductRange> _productRanges;
-
   int? _selectedYear;
 
   /// Contrôleur d'onglets référencé par SsdmHome (nav inter-vues).
@@ -69,18 +57,21 @@ class SsdmService extends ChangeNotifier {
   /// Filtre "ligne du plan" appliqué à la vue Visites.
   String? planEntryFilterForVisits;
 
-  SsdmService()
-      : _years = Hive.box<SsdmYear>(BoxNames.ssdmYears),
-        _plan = Hive.box<SalesPlanEntry>(BoxNames.ssdmPlan),
-        _actions = Hive.box<SalesAction>(BoxNames.ssdmActions),
-        _visits = Hive.box<Visit>(BoxNames.ssdmVisits),
-        _visitFrames = Hive.box<VisitFrame>(BoxNames.ssdmVisitFrames),
-        _ivs = Hive.box<Iv>(BoxNames.ivs),
-        _groups = Hive.box<ClientGroup>(BoxNames.clientGroups),
-        _types = Hive.box<ClientType>(BoxNames.clientTypes),
-        _clients = Hive.box<Client>(BoxNames.clients),
-        _contacts = Hive.box<Contact>(BoxNames.contacts),
-        _productRanges = Hive.box<ProductRange>(BoxNames.productRanges);
+  // Lazy getters pour les Box Hive - évite les problèmes de race condition
+  // lors de l'initialisation
+  Box<SsdmYear> get _years => Hive.box<SsdmYear>(BoxNames.ssdmYears);
+  Box<SalesPlanEntry> get _plan => Hive.box<SalesPlanEntry>(BoxNames.ssdmPlan);
+  Box<SalesAction> get _actions => Hive.box<SalesAction>(BoxNames.ssdmActions);
+  Box<Visit> get _visits => Hive.box<Visit>(BoxNames.ssdmVisits);
+  Box<VisitFrame> get _visitFrames => Hive.box<VisitFrame>(BoxNames.ssdmVisitFrames);
+  Box<Iv> get _ivs => Hive.box<Iv>(BoxNames.ivs);
+  Box<ClientGroup> get _groups => Hive.box<ClientGroup>(BoxNames.clientGroups);
+  Box<ClientType> get _types => Hive.box<ClientType>(BoxNames.clientTypes);
+  Box<Client> get _clients => Hive.box<Client>(BoxNames.clients);
+  Box<Contact> get _contacts => Hive.box<Contact>(BoxNames.contacts);
+  Box<ProductRange> get _productRanges => Hive.box<ProductRange>(BoxNames.productRanges);
+
+  SsdmService();
 
   // ------------------------------------------------------------- Navigation
 
@@ -696,6 +687,7 @@ class SsdmService extends ChangeNotifier {
     String? actionId,
     List<String>? productRangeIds,
     List<String>? documentPaths,
+    String? visitFrameId,
     String title = '',
     required DateTime appointmentDate,
     int estimatedDuration = 60,
@@ -717,6 +709,7 @@ class SsdmService extends ChangeNotifier {
       actionIds: actionId != null ? [actionId] : null,
       productRangeIds: productRangeIds,
       documentPaths: documentPaths,
+      visitFrameId: visitFrameId,
       title: title,
       appointmentDate: appointmentDate,
       estimatedDuration: estimatedDuration,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/module.dart';
+import '../../core/module.dart';
 import 'views/ssdm_home.dart';
 
 /// Déclaration du module SSDM (Service Sales Dev Management).

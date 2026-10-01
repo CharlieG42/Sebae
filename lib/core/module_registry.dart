@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../modules/ssdm/ssdm_module.dart';
+import '../modules/ssdm/ssdm_module.dart';
 import 'module.dart';
+import '../modules/wuect/wuect_module.dart';
 
 /// Registre des modules de la plateforme Sebae.
 ///
@@ -9,14 +10,7 @@ import 'module.dart';
 abstract final class ModuleRegistry {
   static List<SebaeModule> get all => [
         ssdmModule,
-        const SebaeModule(
-          id: 'wuect',
-          name: 'WUECT',
-          description:
-              'Water Utility Engineering Calculation Tool - à venir. '
-              'Partageras les bases de données communes avec Sebae.',
-          icon: Icons.water_drop_outlined,
-        ),
+        wuectModule,
         const SebaeModule(
           id: 'maintenance',
           name: 'Contrat Maintenance',

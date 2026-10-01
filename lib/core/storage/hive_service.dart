@@ -17,6 +17,9 @@ import '../../modules/ssdm/models/sales_plan_entry.dart';
 import '../../modules/ssdm/models/ssdm_year.dart';
 import '../../modules/ssdm/models/visit.dart';
 import '../../modules/ssdm/models/visit_frame.dart';
+import '../../modules/wuect/models/pompe.dart';
+import '../../modules/wuect/models/projet.dart';
+import '../../modules/wuect/models/systeme.dart';
 import 'box_names.dart';
 
 /// Initialisation de Hive et ouverture de toutes les boxes.
@@ -56,6 +59,10 @@ class HiveService {
     Hive.registerAdapter(VisitAdapter());
     // Modèle Trames de Visite
     Hive.registerAdapter(VisitFrameAdapter());
+    // --- Adapters : module WUECT ---
+    Hive.registerAdapter(ProjetAdapter());
+    Hive.registerAdapter(SystemeAdapter());
+    Hive.registerAdapter(PompeAdapter());
 
     // --- Ouverture des boxes ---
     await Future.wait([
@@ -74,6 +81,11 @@ class HiveService {
       Hive.openBox<Visit>(BoxNames.ssdmVisits),
       // Box Trames de Visite
       Hive.openBox<VisitFrame>(BoxNames.ssdmVisitFrames),
+      // Boxes module WUECT
+      Hive.openBox<Projet>(BoxNames.wuectProjets),
+      Hive.openBox<Systeme>(BoxNames.wuectSystemes),
+      Hive.openBox<Pompe>(BoxNames.wuectPompes),
+      Hive.openBox(BoxNames.wuectSettings),
     ]);
 
     _initialized = true;

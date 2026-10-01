@@ -23,6 +23,7 @@ import 'box_names.dart';
 ///
 /// Les boxes partagées (`shared_*`) sont ouvertes ici une seule fois :
 /// tous les modules y accedent via `Hive.box(...)`.
+/// 
 class HiveService {
   static var _initialized = false;
 
@@ -33,6 +34,8 @@ class HiveService {
     final appDir = await getApplicationSupportDirectory();
     final hivePath = path.join(appDir.path, 'hive_data');
     await Hive.initFlutter(hivePath);
+
+    print('Hive path: ${path.join(appDir.path, "hive_data")}'); 
 
     // --- Adapters : entites partagées ---
     Hive.registerAdapter(IvAdapter());
@@ -156,6 +159,6 @@ class HiveService {
 
   /// Chemin par défaut pour les sauvegardes
   static String get defaultBackupPath {
-    return r'C:\Users\72904\Dev\Backup\WUECT\hive';
+    return r'C:\Users\72904\Dev\Backup\Sebae\hive';
   }
 }

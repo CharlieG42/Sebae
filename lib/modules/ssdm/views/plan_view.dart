@@ -344,11 +344,12 @@ Future<void> _showPlanEntryVisitsDialog(
       ),
     );
 
-    if (confirmed == true) {
-      final navigatorContext = context;
-      Navigator.of(navigatorContext).pop();
+    if (confirmed == true && context.mounted) {
+      Navigator.of(context).pop();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        showVisitDialog(navigatorContext, presetPlanEntryId: entry.id, useRootNavigator: true);
+        if (context.mounted) {
+          showVisitDialog(context, presetPlanEntryId: entry.id, useRootNavigator: true);
+        }
       });
     }
     return;

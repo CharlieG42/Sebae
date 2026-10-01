@@ -382,16 +382,17 @@ class VisitDetailView extends StatelessWidget {
     );
 
     if (confirmed == true) {
-      final navigatorContext = context;
       await service.deleteVisit(visit);
-      Navigator.of(navigatorContext).pop();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (navigatorContext.mounted) {
-          ScaffoldMessenger.of(navigatorContext).showSnackBar(
-            const SnackBar(content: Text('Visite supprimée')),
-          );
-        }
-      });
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Visite supprimée')),
+            );
+          }
+        });
+      }
     }
   }
 
@@ -426,7 +427,7 @@ class VisitDetailView extends StatelessWidget {
       ),
     );
 
-    if (noteType != null) {
+    if (noteType != null && context.mounted) {
       final controller = TextEditingController();
       final newNote = await showDialog<String?>(
         context: context,
@@ -453,8 +454,7 @@ class VisitDetailView extends StatelessWidget {
         ),
       );
 
-      if (newNote != null && newNote.trim().isNotEmpty) {
-        final scaffoldContext = context;
+      if (newNote != null && newNote.trim().isNotEmpty && context.mounted) {
         final notesBefore = noteType == 'before' ? '${visit.notesBefore}\n\n${newNote.trim()}' : visit.notesBefore;
         final notesDuring = noteType == 'during' ? '${visit.notesDuring}\n\n${newNote.trim()}' : visit.notesDuring;
         final notesAfter = noteType == 'after' ? '${visit.notesAfter}\n\n${newNote.trim()}' : visit.notesAfter;
@@ -464,8 +464,8 @@ class VisitDetailView extends StatelessWidget {
           notesDuring: notesDuring,
           notesAfter: notesAfter,
         );
-        if (scaffoldContext.mounted) {
-          ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Note ajoutée')),
           );
         }

@@ -379,14 +379,6 @@ class _PlanByIvChart extends StatelessWidget {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              getTitlesWidget: (value, meta) =>
-                  SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text(
-                      ivs[value.toInt()].shortLabel,
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                  ),
             ),
           ),
         ),

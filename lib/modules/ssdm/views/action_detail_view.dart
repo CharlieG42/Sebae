@@ -457,13 +457,12 @@ class _RevenueSectionState extends State<_RevenueSection> {
             const SizedBox(width: 8),
             FilledButton(
               onPressed: () async {
-                final scaffoldContext = context;
                 final revenue = double.tryParse(
                   _revenueController.text.replaceAll(',', '.'),
                 ) ?? 0;
                 await service.updateActionRevenue(widget.action, revenue);
-                if (mounted) {
-                  ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                if (mounted && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('CA mis à jour : ${_eur.format(revenue)}'),
                     ),

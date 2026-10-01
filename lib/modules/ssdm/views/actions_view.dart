@@ -57,7 +57,7 @@ class ActionsView extends StatelessWidget {
     if (actions.isEmpty) {
       return Column(
         children: [
-          if (header != null) header,
+          ...(header != null ? [header] : []),
           Expanded(
             child: EmptyState(
               icon: Icons.flag_outlined,
@@ -82,7 +82,7 @@ class ActionsView extends StatelessWidget {
       children: [
         Column(
           children: [
-            if (header != null) header,
+            ...(header != null ? [header] : []),
             // Total CA
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -306,12 +306,13 @@ class _ActionCard extends StatelessWidget {
         ),
       );
 
-      if (confirmed == true) {
-        final navigatorContext = context;
-        Navigator.of(navigatorContext).pop();
+      if (confirmed == true && context.mounted) {
+        Navigator.of(context).pop();
         // Utiliser WidgetsBinding pour s'assurer que le contexte est valide
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          showVisitDialog(navigatorContext, presetActionId: action.id);
+          if (context.mounted) {
+            showVisitDialog(context, presetActionId: action.id);
+          }
         });
       }
       return;

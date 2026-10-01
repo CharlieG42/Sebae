@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../core/module_registry.dart';
 import '../data/data_home.dart';
@@ -51,6 +52,19 @@ class _HomeShellState extends State<HomeShell> {
               selectedIndex: _index,
               onDestinationSelected: (i) => setState(() => _index = i),
               labelType: NavigationRailLabelType.all,
+              trailing: Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: IconButton(
+                      icon: const Icon(Icons.logout),
+                      tooltip: 'Quitter',
+                      onPressed: () => windowManager.close(),
+                    ),
+                  ),
+                ),
+              ),
               destinations: destinations,
             ),
             const VerticalDivider(width: 1),
@@ -83,6 +97,11 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => windowManager.close(),
+        tooltip: 'Quitter',
+        child: const Icon(Icons.close),
+      ),
     );
   }
 }
@@ -95,7 +114,16 @@ class _ModulesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final modules = ModuleRegistry.all;
     return Scaffold(
-      appBar: AppBar(title: const Text('Sebae')),
+      appBar: AppBar(
+        title: const Text('Sebae'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Quitter',
+            onPressed: () => windowManager.close(),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

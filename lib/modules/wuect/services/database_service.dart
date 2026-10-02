@@ -25,27 +25,23 @@ abstract final class WuectBoxNames {
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
 
-  // Boxes du module
-  late final Box<Projet> _projetsBox;
-  late final Box<Systeme> _systemesBox;
-  late final Box<Pompe> _pompesBox;
+  // Boxes du module - lazy initialization pour éviter les erreurs de double init
+  Box<Projet>? _projetsBox;
+  Box<Systeme>? _systemesBox;
+  Box<Pompe>? _pompesBox;
 
-  // Boxes partagées Sebae
-  late final Box<Contact> _contactsBox;
-  late final Box<Iv> _ivsBox;
+  // Boxes partagées Sebae - lazy initialization
+  Box<Contact>? _contactsBox;
+  Box<Iv>? _ivsBox;
 
   DatabaseService._init();
 
-  /// Les boxes (partagées et module) sont ouvertes par [HiveService.init]
-  /// au démarrage de Sebae. Cette méthode ne fait que récupérer les
-  /// références.
-  static void init() {
-    instance._contactsBox = Hive.box<Contact>(BoxNames.contacts);
-    instance._ivsBox = Hive.box<Iv>(BoxNames.ivs);
-    instance._projetsBox = Hive.box<Projet>(WuectBoxNames.projets);
-    instance._systemesBox = Hive.box<Systeme>(WuectBoxNames.systemes);
-    instance._pompesBox = Hive.box<Pompe>(WuectBoxNames.pompes);
-  }
+  /// Récupère une box avec initialisation lazy
+  Box<Projet> _getProjetsBox() => _projetsBox ??= Hive.box<Projet>(WuectBoxNames.projets);
+  Box<Systeme> _getSystemesBox() => _systemesBox ??= Hive.box<Systeme>(WuectBoxNames.systemes);
+  Box<Pompe> _getPompesBox() => _pompesBox ??= Hive.box<Pompe>(WuectBoxNames.pompes);
+  Box<Contact> _getContactsBox() => _contactsBox ??= Hive.box<Contact>(BoxNames.contacts);
+  Box<Iv> _getIvsBox() => _ivsBox ??= Hive.box<Iv>(BoxNames.ivs);
 
   // Helper method pour générer un nouvel ID auto-incrémenté
   int _generateNewId(Iterable<dynamic> keys) {
@@ -65,25 +61,25 @@ class DatabaseService {
 
   Future<String> insertContact(Contact contact) async {
     final String id = contact.id;
-    await _contactsBox.put(id, contact);
+    await _getContactsBox().put(id, contact);
     return id;
   }
 
   Future<List<Contact>> getAllContacts() async {
-    return _contactsBox.values.where((c) => c.active).toList();
+    return _getContactsBox().values.where((c) => c.active).toList();
   }
 
   Future<Contact?> getContactById(String id) async {
-    return _contactsBox.get(id);
+    return _getContactsBox().get(id);
   }
 
   Future<int> updateContact(Contact contact) async {
-    await _contactsBox.put(contact.id, contact);
+    await _getContactsBox().put(contact.id, contact);
     return 1;
   }
 
   Future<int> deleteContact(String id) async {
-    await _contactsBox.delete(id);
+    await _getContactsBox().delete(id);
     return 1;
   }
 
@@ -92,11 +88,11 @@ class DatabaseService {
   // ====================
 
   Future<List<Iv>> getAllIVs() async {
-    return _ivsBox.values.where((iv) => iv.active).toList();
+    return _getIvsBox().values.where((iv) => iv.active).toList();
   }
 
   Future<Iv?> getIVById(String id) async {
-    return _ivsBox.get(id);
+    return _getIvsBox().get(id);
   }
 
   // ====================
@@ -104,28 +100,28 @@ class DatabaseService {
   // ====================
 
   Future<int> insertProjet(Projet projet) async {
-    final int id = _generateNewId(_projetsBox.keys);
+    final int id = _generateNewId(_getProjetsBox().keys);
     final projetToInsert = projet.copyWith(id: id);
-    await _projetsBox.put(id, projetToInsert);
+    await _getProjetsBox().put(id, projetToInsert);
     return id;
   }
 
   Future<List<Projet>> getAllProjets() async {
-    return _projetsBox.values.toList();
+    return _getProjetsBox().values.toList();
   }
 
   Future<Projet?> getProjetById(int id) async {
-    return _projetsBox.get(id);
+    return _getProjetsBox().get(id);
   }
 
   Future<int> updateProjet(Projet projet) async {
     if (projet.id == null) return 0;
-    await _projetsBox.put(projet.id, projet);
+    await _getProjetsBox().put(projet.id, projet);
     return 1;
   }
 
   Future<int> deleteProjet(int id) async {
-    await _projetsBox.delete(id);
+    await _getProjetsBox().delete(id);
     return 1;
   }
 
@@ -134,32 +130,32 @@ class DatabaseService {
   // ====================
 
   Future<int> insertSysteme(Systeme systeme) async {
-    final int id = _generateNewId(_systemesBox.keys);
+    final int id = _generateNewId(_getSystemesBox().keys);
     final systemeToInsert = systeme.copyWith(id: id);
-    await _systemesBox.put(id, systemeToInsert);
+    await _getSystemesBox().put(id, systemeToInsert);
     return id;
   }
 
   Future<List<Systeme>> getAllSystemes() async {
-    return _systemesBox.values.toList();
+    return _getSystemesBox().values.toList();
   }
 
   Future<List<Systeme>> getSystemesByProjetId(int projetId) async {
-    return _systemesBox.values.where((s) => s.projetId == projetId).toList();
+    return _getSystemesBox().values.where((s) => s.projetId == projetId).toList();
   }
 
   Future<Systeme?> getSystemeById(int id) async {
-    return _systemesBox.get(id);
+    return _getSystemesBox().get(id);
   }
 
   Future<int> updateSysteme(Systeme systeme) async {
     if (systeme.id == null) return 0;
-    await _systemesBox.put(systeme.id, systeme);
+    await _getSystemesBox().put(systeme.id, systeme);
     return 1;
   }
 
   Future<int> deleteSysteme(int id) async {
-    await _systemesBox.delete(id);
+    await _getSystemesBox().delete(id);
     return 1;
   }
 
@@ -168,32 +164,32 @@ class DatabaseService {
   // ====================
 
   Future<int> insertPompe(Pompe pompe) async {
-    final int id = _generateNewId(_pompesBox.keys);
+    final int id = _generateNewId(_getPompesBox().keys);
     final pompeToInsert = pompe.copyWith(id: id);
-    await _pompesBox.put(id, pompeToInsert);
+    await _getPompesBox().put(id, pompeToInsert);
     return id;
   }
 
   Future<List<Pompe>> getAllPompes() async {
-    return _pompesBox.values.toList();
+    return _getPompesBox().values.toList();
   }
 
   Future<List<Pompe>> getPompesBySystemeId(int systemeId) async {
-    return _pompesBox.values.where((p) => p.systemeId == systemeId).toList();
+    return _getPompesBox().values.where((p) => p.systemeId == systemeId).toList();
   }
 
   Future<Pompe?> getPompeById(int id) async {
-    return _pompesBox.get(id);
+    return _getPompesBox().get(id);
   }
 
   Future<int> updatePompe(Pompe pompe) async {
     if (pompe.id == null) return 0;
-    await _pompesBox.put(pompe.id, pompe);
+    await _getPompesBox().put(pompe.id, pompe);
     return 1;
   }
 
   Future<int> deletePompe(int id) async {
-    await _pompesBox.delete(id);
+    await _getPompesBox().delete(id);
     return 1;
   }
 
@@ -208,9 +204,9 @@ class DatabaseService {
     }
 
     final systemesToDelete =
-        _systemesBox.values.where((s) => s.projetId == projetId).toList();
+        _getSystemesBox().values.where((s) => s.projetId == projetId).toList();
     for (final systeme in systemesToDelete) {
-      await _systemesBox.delete(systeme.id);
+      await _getSystemesBox().delete(systeme.id);
     }
 
     await deleteProjet(projetId);
@@ -218,9 +214,9 @@ class DatabaseService {
 
   Future<int> deletePompeBySystemeId(int systemeId) async {
     final pompesToDelete =
-        _pompesBox.values.where((p) => p.systemeId == systemeId).toList();
+        _getPompesBox().values.where((p) => p.systemeId == systemeId).toList();
     for (final pompe in pompesToDelete) {
-      await _pompesBox.delete(pompe.id);
+      await _getPompesBox().delete(pompe.id);
     }
     return pompesToDelete.length;
   }
@@ -232,7 +228,7 @@ class DatabaseService {
   Future<void> get database async {}
 
   void debugPrintBoxes() {
-    debugPrint('WUECT boxes: projets=${_projetsBox.length}, '
-        'systemes=${_systemesBox.length}, pompes=${_pompesBox.length}');
+    debugPrint('WUECT boxes: projets=${_getProjetsBox().length}, '
+        'systemes=${_getSystemesBox().length}, pompes=${_getPompesBox().length}');
   }
 }

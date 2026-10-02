@@ -22,7 +22,7 @@ const SebaeModule wuectModule = SebaeModule(
 );
 
 Widget _buildWuectHome(BuildContext context) {
-  DatabaseService.init();
+  DatabaseService.instance;  // Initialisation lazy, no need for init()
   SettingsService.instance.ensureInitialized();
   return const ProjetListScreen();
 }

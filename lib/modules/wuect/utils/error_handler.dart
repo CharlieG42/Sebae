@@ -7,6 +7,6 @@ class ErrorHandler {
       content: Text(message),
       backgroundColor: error ? Colors.red : Colors.green,
     );
-    ScaffoldMessenger.of(context).showSnackBar(snack);
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(snack);
   }
 }

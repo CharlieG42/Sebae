@@ -167,7 +167,7 @@ class SettingsDialog {
                       icon: const Icon(Icons.folder_open, size: 20),
                       tooltip: 'Choisir le dossier',
                       onPressed: () async {
-                        final result = await FilePicker.platform.getDirectoryPath();
+                        final result = await FilePicker.getDirectoryPath();
                         if (result != null) {
                           setDialogState(() => settings.pdfExportDirectory = result);
                         }

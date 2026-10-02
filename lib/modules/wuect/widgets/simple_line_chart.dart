@@ -25,7 +25,7 @@ class SimpleLineChart extends StatefulWidget {
   final String unit;
 
   const SimpleLineChart({
-    Key? key,
+    super.key,
     required this.ancien,
     required this.nouveau,
     this.economies,
@@ -40,7 +40,7 @@ class SimpleLineChart extends StatefulWidget {
     required this.yTickCount,
     required this.isCurrency,
     required this.unit,
-  }) : super(key: key);
+  });
 
   @override
   State<SimpleLineChart> createState() => _SimpleLineChartState();

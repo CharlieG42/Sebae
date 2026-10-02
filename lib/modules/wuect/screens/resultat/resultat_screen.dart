@@ -1617,16 +1617,16 @@ class _ResultatScreenState extends State<ResultatScreen> {
       );
 
       // Utiliser file_picker pour sauvegarder le fichier
-      final filePath = await FilePicker.platform.saveFile(
+      final filePath = await FilePicker.saveFile(
         dialogTitle: 'Enregistrer le rapport Word',
         fileName: '${_projet!.nomSite.replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '_')}_rapport_comparatif.docx',
         allowedExtensions: ['docx'],
         type: FileType.custom,
+        bytes: bytes,
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       );
 
       if (filePath != null) {
-        final file = File(filePath);
-        await file.writeAsBytes(bytes);
         
         if (mounted) {
           ErrorHandler.showSnackBar(context, 'Rapport Word sauvegardé: $filePath');

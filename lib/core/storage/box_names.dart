@@ -23,6 +23,12 @@ abstract final class BoxNames {
   static const ssdmVisits = 'ssdm_visits';
   static const ssdmVisitFrames = 'ssdm_visit_frames';
 
+  // --- Module WUECT ---
+  static const wuectProjets = 'wuect_projets';
+  static const wuectSystemes = 'wuect_systemes';
+  static const wuectPompes = 'wuect_pompes';
+  static const wuectSettings = 'wuect_settings';
+
   static const all = [
     ivs,
     clientGroups,
@@ -35,5 +41,9 @@ abstract final class BoxNames {
     ssdmActions,
     ssdmVisits,
     ssdmVisitFrames,
+    wuectProjets,
+    wuectSystemes,
+    wuectPompes,
+    wuectSettings,
   ];
 }

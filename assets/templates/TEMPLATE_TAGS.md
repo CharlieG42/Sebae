@@ -1,0 +1,298 @@
+# WUECT - Référence des Tags pour Template de Rapport DOCX
+
+> **Version** : 1.2  
+> **Date** : 23/09/2026  
+> **Format** : DOCX avec tags à remplacer
+
+---
+
+## ✅ **État actuel de l'implémentation**
+
+**Bonne nouvelle** : Le remplacement de tags **EST IMPLEMENTE** dans `WordReportService` (`lib/services/word_report_service.dart`).
+
+Ce service génère des rapports DOCX en :
+1. Chargeant le template `assets/templates/rapport_template.docx`
+2. Remplaçant tous les tags `{{TAG}}` par les valeurs correspondantes
+3. Dupliquant automatiquement les lignes du tableau annuel basées sur `{{ANNEE_1}}`
+
+Le template actuel `rapport_template.docx` doit contenir les tags documentés ci-dessous pour que le rapport soit généré correctement.
+
+**Note sur les PDF** : Les services `PdfExportService` (`lib/utils/exportPDF.dart`) et `RapportService` (`lib/services/rapport_service.dart`) ont été conservés pour référence mais ne sont plus utilisés dans l'interface principale. Le bouton "Exporter PDF" a été supprimé de l'AppBar.
+
+---
+
+## 📌 **Instructions d'utilisation**
+
+1. **Créer votre template** dans `assets/templates/template_ec.pptx` (ou .docx)
+2. **Insérer les tags** là où les données doivent apparaître (ex: `{{PROJET_NOM}}`)
+3. **Pour les images** : Utiliser des placeholders nommés (ex: un rectangle nommé "GRAPHIQUE_COUT")
+4. **Exporter en PDF** afin que le code flutter puisse modifier les tags
+5. **Le code Flutter** remplacera automatiquement les tags par les valeurs réelles
+
+---
+
+## 📊 **Tags Disponibles**
+
+### 🏢 **Projet**
+| Tag | Description | Format | Exemple |
+|-----|-------------|--------|---------|
+| `{{PROJET_NOM}}` | Nom du projet | Texte | "Projet WUECT 2026" |
+| `{{PROJET_DATE}}` | Date de création | Date (DD/MM/YYYY) | "22/09/2026" |
+| `{{PROJET_COUT_ENERGIE}}` | Coût de l'énergie | €/kWh (2 décimales) | "0,15 €/kWh" |
+| `{{PROJET_AUGMENTATION_ENERGIE}}` | Taux d'augmentation annuel | % (1 décimale) | "3,5 %" |
+| `{{PROJET_PERTE_RENDEMENT}}` | Taux de perte de rendement | % (1 décimale) | "2,0 %" |
+| `{{PROJET_DUREE_ETUDE}}` | Durée de l'étude | Années | "15" |
+
+---
+
+### 👤 **Client & Contact**
+| Tag | Description | Format | Exemple |
+|-----|-------------|--------|---------|
+| `{{CLIENT_NOM}}` | Nom du client (raison sociale / site) | Texte | "Camping Les Pins" |
+| `{{CONTACT_NOM}}` | Nom de la personne contact chez le client | Texte | "Jean Dupont" |
+| `{{CONTACT_EMAIL}}` | Email du contact | Texte | "j.dupont@example.com" |
+| `{{CONTACT_MOBILE}}` | Téléphone mobile du contact | Texte | "06 12 34 56 78" |
+
+---
+
+### 🏭 **Systèmes**
+
+#### Système Ancien
+| Tag | Description | Format | Exemple |
+|-----|-------------|--------|---------|
+| `{{SYSTEME_ANCIEN_NOM}}` | Nom du système ancien | Texte | "Système Existant" |
+| `{{SYSTEME_ANCIEN_INVESTISSEMENT}}` | Coût d'investissement | € (0 décimales) | "100 000 €" |
+
+#### Système Nouveau
+| Tag | Description | Format | Exemple |
+|-----|-------------|--------|---------|
+| `{{SYSTEME_NOUVEAU_NOM}}` | Nom du système nouveau | Texte | "Système Optimisé" |
+| `{{SYSTEME_NOUVEAU_INVESTISSEMENT}}` | Coût d'investissement | € (0 décimales) | "150 000 €" |
+| `{{SYSTEME_NOUVEAU_ECONOMIE_INVESTISSEMENT}}` | Économie d'investissement | € (0 décimales) | "-50 000 €" |
+
+---
+
+### 🔧 **Pompes (caractéristiques par système)**
+
+> Un système peut contenir plusieurs pompes. Comme pour les données année par
+> année, utilisez un index **j** (1 à N) pour désigner la j-ième pompe du
+> système Ancien ou Nouveau (ex: `{{POMPE_ANCIEN_1_MARQUE}}`,
+> `{{POMPE_NOUVEAU_2_HMT}}`...).
+
+| Tag | Description | Format | Exemple |
+|-----|-------------|--------|---------|
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_MARQUE}}` | Marque de la pompe j | Texte | "Grundfos" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_MODELE}}` | Modèle de la pompe j | Texte | "CR 32-4" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_PUISSANCE_NOMINALE}}` | Puissance nominale plaque moteur | kW (2 décimales) | "11,00 kW" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_DEBIT}}` | Débit nominal | m³/h (2 décimales) | "45,00 m³/h" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_HMT}}` | Hauteur manométrique totale | mCE (2 décimales) | "32,00 mCE" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_RENDEMENT_POMPE}}` | Rendement initial de la pompe | % (1 décimale) | "78,0 %" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_RENDEMENT_MOTEUR}}` | Rendement initial du moteur | % (1 décimale) | "91,0 %" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_ANNEE_INSTALLATION}}` | Année d'installation | Entier | "2015" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_HEURES_FONCTIONNEMENT}}` | Heures de fonctionnement / an | h (0 décimale) | "6 000 h" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_P1_CALCULEE}}` | Puissance utile P1 calculée (débit×HMT/rendements) | kW (2 décimales) | "9,80 kW" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_P1_ESTIMEE}}` | Puissance P1 corrigée manuellement (si renseignée) | kW (2 décimales) | "10,20 kW" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_ENERGIE_SPECIFIQUE}}` | Énergie spécifique (puissance utilisée / débit) | kW/(m³/h) (4 décimales) | "0,2178" |
+| `{{POMPE_[ANCIEN\|NOUVEAU]_j_COUT_INVESTISSEMENT}}` | Coût d'investissement de la pompe | € (0 décimale) | "8 500 €" |
+
+---
+
+### 📈 **Données Années par Année**
+
+> ⚠️ **Important** : Pour les données annuelles, utilisez l'index de l'année (1 à N)
+
+#### Pour chaque année **i** (de 1 à `{{PROJET_DUREE_ETUDE}}`)
+
+| Tag | Description | Format | Exemple (Année 1) |
+|-----|-------------|--------|------------------|
+| `{{ANNEE_i}}` | Numéro de l'année | Entier | "1" |
+| `{{CONSOMMATION_ANCIEN_i}}` | Consommation ancienne année i | kWh (0 décimales) | "50 000 kWh" |
+| `{{CONSOMMATION_NOUVEAU_i}}` | Consommation nouvelle année i | kWh (0 décimales) | "45 000 kWh" |
+| `{{ECONOMIE_KWH_i}}` | Économie en kWh année i | kWh (0 décimales) | "5 000 kWh" |
+| `{{COUT_ANCIEN_i}}` | Coût ancien année i | € (2 décimales) | "7 500,00 €" |
+| `{{COUT_NOUVEAU_i}}` | Coût nouveau année i | € (2 décimales) | "6 750,00 €" |
+| `{{ECONOMIE_EURO_i}}` | Économie en € année i | € (2 décimales) | "750,00 €" |
+| `{{CUMUL_KWH_i}}` | Économie cumulée kWh année i | kWh (0 décimales) | "5 000 kWh" |
+| `{{CUMUL_EURO_i}}` | Économie cumulée € année i | € (2 décimales) | "750,00 €" |
+
+#### Exemple de tableau dans le template :
+```
+| Année | Conso Ancien | Conso Nouveau | Économie kWh | Coût Ancien | Coût Nouveau | Économie € | Cumul € |
+|-------|--------------|--------------|--------------|-------------|--------------|------------|---------|
+| {{ANNEE_1}} | {{CONSOMMATION_ANCIEN_1}} | {{CONSOMMATION_NOUVEAU_1}} | {{ECONOMIE_KWH_1}} | {{COUT_ANCIEN_1}} | {{COUT_NOUVEAU_1}} | {{ECONOMIE_EURO_1}} | {{CUMUL_EURO_1}} |
+| {{ANNEE_2}} | {{CONSOMMATION_ANCIEN_2}} | {{CONSOMMATION_NOUVEAU_2}} | {{ECONOMIE_KWH_2}} | {{COUT_ANCIEN_2}} | {{COUT_NOUVEAU_2}} | {{ECONOMIE_EURO_2}} | {{CUMUL_EURO_2}} |
+...
+```
+
+---
+
+### 💰 **Données Globales (Totaux)**
+
+| Tag | Description | Format | Exemple |
+|-----|-------------|--------|---------|
+| `{{TOTAL_COUT_ANCIEN}}` | Coût total ancien (invest + énergie) | € (0 décimales) | "250 000 €" |
+| `{{TOTAL_COUT_NOUVEAU}}` | Coût total nouveau (invest + énergie) | € (0 décimales) | "200 000 €" |
+| `{{TOTAL_ECONOMIE}}` | Économie totale | € (0 décimales) | "50 000 €" |
+| `{{SEUIL_RENTABILITE}}` | Année de basculement | Année | "5" |
+| `{{TAUX_RENTABILITE}}` | Taux de rentabilité | % (2 décimales) | "12,50 %" |
+
+---
+
+### 📊 **Graphiques (Images)**
+
+Les graphiques sont capturés comme images et peuvent être insérés dans le rapport.
+
+| Placeholder | Description | Format |
+|-------------|-------------|--------|
+| `GRAPHIQUE_CONSOMMATION` | Graphique de consommation énergétique | Image PNG |
+| `GRAPHIQUE_COUT` | Graphique de coût sur N ans | Image PNG |
+
+#### Comment intégrer les images dans PowerPoint :
+1. Créer un rectangle ou une zone de texte avec le nom exact du placeholder
+2. Le code remplaceras cette zone par l'image du graphique
+3. **Alternative** : Utiliser un tag comme `{{IMAGE_GRAPHIQUE_COUT}}` et le code insérera l'image
+
+---
+
+### 📅 **Date et Métadonnées**
+
+| Tag | Description | Format | Exemple |
+|-----|-------------|--------|---------|
+| `{{DATE_RAPPORT}}` | Date de génération du rapport | DD/MM/YYYY | "22/09/2026" |
+| `{{HEURE_RAPPORT}}` | Heure de génération | HH:MM | "15:30" |
+| `{{NOM_UTILISATEUR}}` | Nom de l'utilisateur | Texte | "Jean Dupont" |
+
+---
+
+## 🎨 **Exemple de Structure de Rapport**
+
+### Page 1 : Page de garde
+```
+{{PROJET_NOM}}
+Étude Comparative Économique
+{{DATE_RAPPORT}}
+```
+
+### Page 2 : Synthèse
+```
+Projet : {{PROJET_NOM}}
+Client : {{CLIENT_NOM}}
+Contact : {{CONTACT_NOM}} ({{CONTACT_EMAIL}} / {{CONTACT_MOBILE}})
+Durée : {{PROJET_DUREE_ETUDE}} ans
+
+Système Ancien : {{SYSTEME_ANCIEN_NOM}}
+Investissement : {{SYSTEME_ANCIEN_INVESTISSEMENT}}
+Pompe 1 : {{POMPE_ANCIEN_1_MARQUE}} {{POMPE_ANCIEN_1_MODELE}} ({{POMPE_ANCIEN_1_PUISSANCE_NOMINALE}})
+
+Système Nouveau : {{SYSTEME_NOUVEAU_NOM}}
+Investissement : {{SYSTEME_NOUVEAU_INVESTISSEMENT}}
+Pompe 1 : {{POMPE_NOUVEAU_1_MARQUE}} {{POMPE_NOUVEAU_1_MODELE}} ({{POMPE_NOUVEAU_1_PUISSANCE_NOMINALE}})
+
+Économie sur {{PROJET_DUREE_ETUDE}} ans : {{TOTAL_ECONOMIE}}
+Seuil de rentabilité : Année {{SEUIL_RENTABILITE}}
+```
+
+### Page 3 : Détails Annuels
+```
+| Année | Coût Ancien | Coût Nouveau | Économie |
+|-------|-------------|--------------|----------|
+| {{ANNEE_1}} | {{COUT_ANCIEN_1}} | {{COUT_NOUVEAU_1}} | {{ECONOMIE_EURO_1}} |
+| {{ANNEE_2}} | {{COUT_ANCIEN_2}} | {{COUT_NOUVEAU_2}} | {{ECONOMIE_EURO_2}} |
+...
+```
+
+### Page 4 : Graphiques
+```
+[Insérer image : GRAPHIQUE_CONSOMMATION]
+[Insérer image : GRAPHIQUE_COUT]
+```
+
+---
+
+## 🔧 **Implémentation Technique**
+
+### Prérequis pour le template DOCX
+1. Placer votre template dans : `assets/templates/rapport_template.docx`
+2. Utiliser les tags exacts (respecter la casse : `{{TAG}}`)
+3. Pour les tableaux annuels, inclure une ligne avec `{{ANNEE_1}}` qui sera dupliquée pour chaque année
+
+### Fonctionnement
+- Le service `WordReportService` parcourt le fichier `document.xml` dans l'archive DOCX
+- Il remplace tous les tags `{{TAG}}` trouvés dans les balises `<w:t>` (runs de texte Word)
+- Pour les tableaux annuels, il duplique la ligne contenant `{{ANNEE_1}}` et renomme les tags en `{{ANNEE_2}}`, `{{ANNEE_3}}`, etc.
+
+---
+
+## 📊 **Ajout des Graphiques dans le Rapport DOCX**
+
+### État actuel
+Actuellement, les graphiques de consommation et de coût **ne sont pas inclus** dans le rapport DOCX généré par `WordReportService`.
+
+### Solution 1 : Insérer manuellement après génération (Recommandé pour l'instant)
+1. Générez le rapport DOCX via l'application
+2. Ouvrez le fichier dans Microsoft Word
+3. Copiez-collez les graphiques depuis l'application ou capturez-les comme images
+4. Insérez-les manuellement dans le document
+
+### Solution 2 : Modifier le template Word avec des placeholders images
+
+Dans votre template `rapport_template.docx` :
+1. Insérez un paragraphe vide avec le texte : `{{GRAPHIQUE_CONSOMMATION}}`
+2. Insérez un autre paragraphe avec : `{{GRAPHIQUE_COUT}}`
+
+**Pour implémenter l'insertion automatique d'images** :
+
+Il faudrait modifier `WordReportService` pour supporter les images. Voici les étapes techniques :
+
+1. **Capturer les graphiques** (déjà fait dans `resultat_screen.dart`) :
+   ```dart
+   final consoImage = await _captureGraphique(_consoGraphKey);
+   final coutImage = await _captureGraphique(_coutGraphKey);
+   ```
+
+2. **Modifier WordReportService** :
+   ```dart
+   // Ajouter des paramètres optionnels pour les images
+   static Future<Uint8List> generateReport({
+     required Uint8List templateBytes,
+     required Map<String, String> tags,
+     List<Map<String, String>> annualRows = const [],
+     Map<String, Uint8List> images = const {}, // Nouveau paramètre
+   }) async {
+     // ... code existant ...
+     
+     // Ajouter les images à l'archive
+     if (images.isNotEmpty) {
+       xml = _insertImages(xml, images, archive);
+     }
+     
+     // ... reste du code ...
+   }
+   ```
+
+3. **Mécanisme d'insertion d'images** :
+   - Ajouter chaque image dans `word/media/` avec un nom unique (ex: `image1.png`)
+   - Mettre à jour `document.xml` pour inclure un élément `<w:drawing>` avec référence à l'image
+   - Mettre à jour `word/_rels/document.xml.rels` pour ajouter la relation
+
+**Complexité** : L'insertion d'images dans DOCX nécessite une bonne compréhension de la structure OpenXML des documents Word. 
+
+### Solution 3 : Utiliser un template avec des images intégrées
+Créez votre template Word avec les graphiques déjà intégrés comme images de fond, puis remplacez simplement les tags textuels.
+
+---
+
+## 📅 **Changelog**
+
+- **v1.2** (23/09/2026) : Mise à jour pour refléter l'implémentation actuelle de WordReportService. Suppression des références à l'export PDF.
+- **v1.1** (22/09/2026) : Version initiale
+
+---
+
+## 📞 **Support**
+
+Pour toute question sur les tags ou l'implémentation, contacter l'équipe de développement.
+
+---
+
+*Documentation WUECT - V1.2*

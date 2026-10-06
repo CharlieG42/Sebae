@@ -26,6 +26,7 @@ class VisitAdapter extends TypeAdapter<Visit> {
       productRangeIds: (fields[10] as List?)?.cast<String>(),
       documentPaths: (fields[11] as List?)?.cast<String>(),
       visitFrameId: fields[19] as String?,
+      followUpTasks: (fields[20] as List?)?.cast<String>(),
       title: fields[6] as String,
       appointmentDate: fields[7] as DateTime,
       estimatedDuration: fields[8] as int,
@@ -43,7 +44,7 @@ class VisitAdapter extends TypeAdapter<Visit> {
   @override
   void write(BinaryWriter writer, Visit obj) {
     writer
-      ..writeByte(20)
+      ..writeByte(21)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -83,7 +84,9 @@ class VisitAdapter extends TypeAdapter<Visit> {
       ..writeByte(18)
       ..write(obj.updatedAt)
       ..writeByte(19)
-      ..write(obj.visitFrameId);
+      ..write(obj.visitFrameId)
+      ..writeByte(20)
+      ..write(obj.followUpTasks);
   }
 
   @override

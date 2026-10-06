@@ -34,8 +34,15 @@ class VisitDetailView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(visit.title.isNotEmpty ? visit.title : 'Détails de la visite'),
+        title: Text(
+          visit.title.isNotEmpty ? visit.title : 'Détails de la visite',
+        ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.assignment_turned_in_outlined),
+            onPressed: () => _showAddFollowUpTaskDialog(context, visit),
+            tooltip: 'Ajouter une tâche de suivi',
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () => showVisitDialog(context, visit: visit),
@@ -64,7 +71,9 @@ class VisitDetailView extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            visit.title.isNotEmpty ? visit.title : 'Visite client',
+                            visit.title.isNotEmpty
+                                ? visit.title
+                                : 'Visite client',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 8),
@@ -116,13 +125,23 @@ class VisitDetailView extends StatelessWidget {
                 if (visit.hasPlanEntries)
                   ListTile(
                     leading: const Icon(Icons.table_chart),
-                    title: Text(visit.planEntryIds!.map((id) => service.planLineLabel(id)).join(', ')),
+                    title: Text(
+                      visit.planEntryIds!
+                          .map((id) => service.planLineLabel(id))
+                          .join(', '),
+                    ),
                     subtitle: const Text('Ligne(s) Sales Plan'),
                   ),
                 if (visit.hasActions)
                   ListTile(
                     leading: const Icon(Icons.checklist),
-                    title: Text(visit.actionIds!.map((id) => service.actionOf(id)?.title ?? 'Action $id').join(', ')),
+                    title: Text(
+                      visit.actionIds!
+                          .map(
+                            (id) => service.actionOf(id)?.title ?? 'Action $id',
+                          )
+                          .join(', '),
+                    ),
                     subtitle: const Text('Action(s) associée(s)'),
                   ),
               ],
@@ -137,7 +156,9 @@ class VisitDetailView extends StatelessWidget {
                 children: [
                   ListTile(
                     leading: const Icon(Icons.description_outlined),
-                    title: Text(service.visitFrameOf(visit.visitFrameId)?.name ?? '?'),
+                    title: Text(
+                      service.visitFrameOf(visit.visitFrameId)?.name ?? '?',
+                    ),
                     subtitle: const Text('Trame associée'),
                   ),
                 ],
@@ -169,16 +190,17 @@ class VisitDetailView extends StatelessWidget {
                     child: Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: (visit.productRangeIds ?? [])
-                          .map((id) {
-                            final service = context.read<SsdmService>();
-                            final pr = service.productRangeOf(id);
-                            return Chip(
-                              label: Text(pr?.displayName ?? '?'),
-                              avatar: const Icon(Icons.shopping_bag_outlined, size: 18),
-                            );
-                          })
-                          .toList(),
+                      children: (visit.productRangeIds ?? []).map((id) {
+                        final service = context.read<SsdmService>();
+                        final pr = service.productRangeOf(id);
+                        return Chip(
+                          label: Text(pr?.displayName ?? '?'),
+                          avatar: const Icon(
+                            Icons.shopping_bag_outlined,
+                            size: 18,
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
                 ],
@@ -196,19 +218,121 @@ class VisitDetailView extends StatelessWidget {
                     child: Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: (visit.documentPaths ?? [])
-                          .map((docPath) {
-                            final fileName = path.basename(docPath);
-                            return Chip(
-                              label: Text(fileName),
-                              avatar: const Icon(Icons.insert_drive_file, size: 18),
-                            );
-                          })
-                          .toList(),
+                      children: (visit.documentPaths ?? []).map((docPath) {
+                        final fileName = path.basename(docPath);
+                        return Chip(
+                          label: Text(fileName),
+                          avatar: const Icon(Icons.insert_drive_file, size: 18),
+                        );
+                      }).toList(),
                     ),
                   ),
                 ],
               ),
+            const SizedBox(height: 12),
+
+            // Parcours guidé de la visite
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Parcours guidé de la visite',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Stepper(
+                      physics: const NeverScrollableScrollPhysics(),
+                      controlsBuilder: (context, _) => const SizedBox.shrink(),
+                      steps: [
+                        Step(
+                          title: const Text('Préparation'),
+                          subtitle: const Text('Avant le rendez-vous'),
+                          content: visit.notesBefore.isNotEmpty
+                              ? Text(visit.notesBefore)
+                              : const Text(
+                                  'Aucune préparation n’a été ajoutée pour cette visite.',
+                                ),
+                        ),
+                        Step(
+                          title: const Text('Pendant la visite'),
+                          subtitle: const Text(
+                            'Points à retenir et observations',
+                          ),
+                          content: visit.notesDuring.isNotEmpty
+                              ? Text(visit.notesDuring)
+                              : const Text(
+                                  'Aucune note de terrain n’a encore été saisie.',
+                                ),
+                        ),
+                        Step(
+                          title: const Text('Après la visite'),
+                          subtitle: const Text('Suivi et actions à lancer'),
+                          content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (visit.hasFollowUpTasks)
+                                ...visit.pendingFollowUpTasks.map(
+                                  (task) => ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: const Icon(
+                                      Icons.check_circle_outline,
+                                      color: Colors.green,
+                                    ),
+                                    title: Text(task),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.close),
+                                      tooltip: 'Supprimer la tâche',
+                                      onPressed: () => _removeFollowUpTask(
+                                        context,
+                                        visit,
+                                        task,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else
+                                const Text(
+                                  'Aucune tâche de suivi n’a été créée pour cette visite.',
+                                ),
+                              const SizedBox(height: 8),
+                              if (visit.notesAfter.isNotEmpty)
+                                _DetailCard(
+                                  icon: Icons.follow_the_signs,
+                                  title: 'Suivi post-visite',
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Text(visit.notesAfter),
+                                    ),
+                                  ],
+                                ),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _showAddFollowUpTaskDialog(
+                                    context,
+                                    visit,
+                                  ),
+                                  icon: const Icon(Icons.add_task),
+                                  label: const Text('Ajouter une tâche'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 12),
 
             // Notes avant
@@ -262,7 +386,10 @@ class VisitDetailView extends StatelessWidget {
                   children: [
                     const Text(
                       'Actions rapides',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Wrap(
@@ -272,20 +399,30 @@ class VisitDetailView extends StatelessWidget {
                         FilledButton.icon(
                           icon: const Icon(Icons.check_circle),
                           label: const Text('Terminer'),
-                          onPressed: () => _updateStatus(context, visit, VisitStatus.done),
+                          onPressed: () =>
+                              _updateStatus(context, visit, VisitStatus.done),
                         ),
                         OutlinedButton.icon(
                           icon: const Icon(Icons.calendar_today),
                           label: const Text('Reporter'),
-                          onPressed: () => _updateStatus(context, visit, VisitStatus.postponed),
+                          onPressed: () => _updateStatus(
+                            context,
+                            visit,
+                            VisitStatus.postponed,
+                          ),
                         ),
                         OutlinedButton.icon(
                           icon: const Icon(Icons.cancel),
                           label: const Text('Annuler'),
-                          onPressed: () => _updateStatus(context, visit, VisitStatus.cancelled),
+                          onPressed: () => _updateStatus(
+                            context,
+                            visit,
+                            VisitStatus.cancelled,
+                          ),
                           style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red,
-                              side: const BorderSide(color: Colors.red)),
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                          ),
                         ),
                         FilledButton.icon(
                           icon: const Icon(Icons.edit_note),
@@ -326,14 +463,21 @@ class VisitDetailView extends StatelessWidget {
     );
   }
 
-  Future<void> _updateStatus(BuildContext context, Visit visit, VisitStatus newStatus) async {
+  Future<void> _updateStatus(
+    BuildContext context,
+    Visit visit,
+    VisitStatus newStatus,
+  ) async {
     final service = context.read<SsdmService>();
-    final confirmed = newStatus == VisitStatus.cancelled || newStatus == VisitStatus.postponed
+    final confirmed =
+        newStatus == VisitStatus.cancelled || newStatus == VisitStatus.postponed
         ? await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
               title: Text('Confirmer ${newStatus.label}'),
-              content: Text('Êtes-vous sûr de vouloir marquer cette visite comme ${newStatus.label.toLowerCase()} ?'),
+              content: Text(
+                'Êtes-vous sûr de vouloir marquer cette visite comme ${newStatus.label.toLowerCase()} ?',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -387,12 +531,77 @@ class VisitDetailView extends StatelessWidget {
         Navigator.of(context).pop();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Visite supprimée')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Visite supprimée')));
           }
         });
       }
+    }
+  }
+
+  Future<void> _showAddFollowUpTaskDialog(
+    BuildContext context,
+    Visit visit,
+  ) async {
+    final service = context.read<SsdmService>();
+    final controller = TextEditingController();
+    final taskText = await showDialog<String?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ajouter une tâche de suivi'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Tâche à réaliser après le RDV',
+            hintText: 'Relancer le client, envoyer le devis, etc.',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Ajouter'),
+          ),
+        ],
+      ),
+    );
+
+    if (taskText != null && taskText.isNotEmpty && context.mounted) {
+      final tasks = (visit.followUpTasks ?? []).toList();
+      if (!tasks.contains(taskText)) {
+        tasks.add(taskText);
+        visit.followUpTasks = tasks;
+        await service.updateVisit(visit);
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Tâche de suivi ajoutée')));
+      }
+    }
+  }
+
+  Future<void> _removeFollowUpTask(
+    BuildContext context,
+    Visit visit,
+    String task,
+  ) async {
+    final service = context.read<SsdmService>();
+    final tasks = (visit.followUpTasks ?? [])
+        .where((item) => item != task)
+        .toList();
+    visit.followUpTasks = tasks;
+    await service.updateVisit(visit);
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Tâche de suivi supprimée')));
     }
   }
 
@@ -413,12 +622,18 @@ class VisitDetailView extends StatelessWidget {
               onTap: () => Navigator.of(context).pop('before'),
             ),
             ListTile(
-              leading: const Icon(Icons.edit_note_outlined, color: Colors.orange),
+              leading: const Icon(
+                Icons.edit_note_outlined,
+                color: Colors.orange,
+              ),
               title: const Text('Pendant le RDV'),
               onTap: () => Navigator.of(context).pop('during'),
             ),
             ListTile(
-              leading: const Icon(Icons.follow_the_signs_outlined, color: Colors.green),
+              leading: const Icon(
+                Icons.follow_the_signs_outlined,
+                color: Colors.green,
+              ),
               title: const Text('Après le RDV / Suivi'),
               onTap: () => Navigator.of(context).pop('after'),
             ),
@@ -432,7 +647,13 @@ class VisitDetailView extends StatelessWidget {
       final newNote = await showDialog<String?>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Note ${noteType == 'before' ? 'avant' : noteType == 'during' ? 'pendant' : 'après'} le RDV'),
+          title: Text(
+            'Note ${noteType == 'before'
+                ? 'avant'
+                : noteType == 'during'
+                ? 'pendant'
+                : 'après'} le RDV',
+          ),
           content: TextField(
             controller: controller,
             maxLines: 5,
@@ -455,19 +676,25 @@ class VisitDetailView extends StatelessWidget {
       );
 
       if (newNote != null && newNote.trim().isNotEmpty && context.mounted) {
-        final notesBefore = noteType == 'before' ? '${visit.notesBefore}\n\n${newNote.trim()}' : visit.notesBefore;
-        final notesDuring = noteType == 'during' ? '${visit.notesDuring}\n\n${newNote.trim()}' : visit.notesDuring;
-        final notesAfter = noteType == 'after' ? '${visit.notesAfter}\n\n${newNote.trim()}' : visit.notesAfter;
+        final notesBefore = noteType == 'before'
+            ? '${visit.notesBefore}\n\n${newNote.trim()}'
+            : visit.notesBefore;
+        final notesDuring = noteType == 'during'
+            ? '${visit.notesDuring}\n\n${newNote.trim()}'
+            : visit.notesDuring;
+        final notesAfter = noteType == 'after'
+            ? '${visit.notesAfter}\n\n${newNote.trim()}'
+            : visit.notesAfter;
 
-        await service.updateVisitNotes(visit,
+        await service.updateVisitNotes(
+          visit,
           notesBefore: notesBefore,
           notesDuring: notesDuring,
           notesAfter: notesAfter,
         );
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Note ajoutée')),
-          );
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Note ajoutée')));
         }
       }
     }
@@ -500,7 +727,10 @@ class _DetailCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ],
             ),

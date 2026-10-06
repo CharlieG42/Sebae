@@ -63,13 +63,15 @@ class SsdmService extends ChangeNotifier {
   Box<SalesPlanEntry> get _plan => Hive.box<SalesPlanEntry>(BoxNames.ssdmPlan);
   Box<SalesAction> get _actions => Hive.box<SalesAction>(BoxNames.ssdmActions);
   Box<Visit> get _visits => Hive.box<Visit>(BoxNames.ssdmVisits);
-  Box<VisitFrame> get _visitFrames => Hive.box<VisitFrame>(BoxNames.ssdmVisitFrames);
+  Box<VisitFrame> get _visitFrames =>
+      Hive.box<VisitFrame>(BoxNames.ssdmVisitFrames);
   Box<Iv> get _ivs => Hive.box<Iv>(BoxNames.ivs);
   Box<ClientGroup> get _groups => Hive.box<ClientGroup>(BoxNames.clientGroups);
   Box<ClientType> get _types => Hive.box<ClientType>(BoxNames.clientTypes);
   Box<Client> get _clients => Hive.box<Client>(BoxNames.clients);
   Box<Contact> get _contacts => Hive.box<Contact>(BoxNames.contacts);
-  Box<ProductRange> get _productRanges => Hive.box<ProductRange>(BoxNames.productRanges);
+  Box<ProductRange> get _productRanges =>
+      Hive.box<ProductRange>(BoxNames.productRanges);
 
   SsdmService();
 
@@ -106,22 +108,25 @@ class SsdmService extends ChangeNotifier {
   SsdmYear? get currentYear =>
       _selectedYear == null ? null : _years.get(_selectedYear.toString());
 
-  List<Iv> get ivs => _ivs.values.where((iv) => iv.active).toList()
-    ..sort((a, b) => a.name.compareTo(b.name));
+  List<Iv> get ivs =>
+      _ivs.values.where((iv) => iv.active).toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
 
-  List<ClientGroup> get clientGroups => _groups.values.toList()
-    ..sort((a, b) => a.name.compareTo(b.name));
+  List<ClientGroup> get clientGroups =>
+      _groups.values.toList()..sort((a, b) => a.name.compareTo(b.name));
 
-  List<ClientType> get clientTypes => _types.values.toList()
-    ..sort((a, b) => a.name.compareTo(b.name));
+  List<ClientType> get clientTypes =>
+      _types.values.toList()..sort((a, b) => a.name.compareTo(b.name));
 
   // --- Nouveaux getters pour les données partagées ---
 
-  List<Client> get clients => _clients.values.where((c) => c.active).toList()
-    ..sort((a, b) => a.displayName.compareTo(b.displayName));
+  List<Client> get clients =>
+      _clients.values.where((c) => c.active).toList()
+        ..sort((a, b) => a.displayName.compareTo(b.displayName));
 
-  List<Contact> get contacts => _contacts.values.where((c) => c.active).toList()
-    ..sort((a, b) => a.displayName.compareTo(b.displayName));
+  List<Contact> get contacts =>
+      _contacts.values.where((c) => c.active).toList()
+        ..sort((a, b) => a.displayName.compareTo(b.displayName));
 
   List<ProductRange> get productRanges =>
       _productRanges.values.where((pr) => pr.active).toList()
@@ -186,7 +191,9 @@ class SsdmService extends ChangeNotifier {
     if (id == kAllId) return 'Tous';
     final iv = ivOf(id);
     if (iv == null) return '?';
-    return iv.trigramOrEmpty.isEmpty ? iv.name : '${iv.trigramOrEmpty} - ${iv.name}';
+    return iv.trigramOrEmpty.isEmpty
+        ? iv.name
+        : '${iv.trigramOrEmpty} - ${iv.name}';
   }
 
   /// Libellé pour une liste d'IV.
@@ -226,7 +233,10 @@ class SsdmService extends ChangeNotifier {
     if (_years.containsKey(year.toString())) {
       throw StateError('L\'année $year existe déjà.');
     }
-    await _years.put(year.toString(), SsdmYear(year: year, caObjective: caObjective));
+    await _years.put(
+      year.toString(),
+      SsdmYear(year: year, caObjective: caObjective),
+    );
 
     if (copyTeamActions && copyFromYear != null) {
       final teamActions = _actions.values.where(
@@ -243,33 +253,38 @@ class SsdmService extends ChangeNotifier {
   }
 
   SalesAction _copyForNewYear(SalesAction source, int year) => SalesAction(
-        id: _uuid.v4(),
-        year: year,
-        title: source.title,
-        description: source.description,
-        ivIds: source.ivIds,
-        clientGroupId: source.clientGroupId,
-        clientTypeId: source.clientTypeId,
-        statusIndex: ActionStatus.planned.index,
-        progress: 0,
-        createdAt: DateTime.now(),
-        history: [],
-        planEntryId: source.planEntryId,
-        revenueAmount: source.revenueAmount,
-        // Les étapes sont recopiées, statuts remis à "à faire".
-        steps: source.steps
-            ?.map((s) => ActionStep(
-                  id: _uuid.v4(),
-                  label: s.label,
-                  weight: s.weight,
-                  statusIndex: ActionStepStatus.todo.index,
-                  dueDate: s.dueDate != null
-                      ? DateTime(s.dueDate!.year + (year - source.year),
-                          s.dueDate!.month, s.dueDate!.day)
-                      : null,
-                ))
-            .toList(),
-      );
+    id: _uuid.v4(),
+    year: year,
+    title: source.title,
+    description: source.description,
+    ivIds: source.ivIds,
+    clientGroupId: source.clientGroupId,
+    clientTypeId: source.clientTypeId,
+    statusIndex: ActionStatus.planned.index,
+    progress: 0,
+    createdAt: DateTime.now(),
+    history: [],
+    planEntryId: source.planEntryId,
+    revenueAmount: source.revenueAmount,
+    // Les étapes sont recopiées, statuts remis à "à faire".
+    steps: source.steps
+        ?.map(
+          (s) => ActionStep(
+            id: _uuid.v4(),
+            label: s.label,
+            weight: s.weight,
+            statusIndex: ActionStepStatus.todo.index,
+            dueDate: s.dueDate != null
+                ? DateTime(
+                    s.dueDate!.year + (year - source.year),
+                    s.dueDate!.month,
+                    s.dueDate!.day,
+                  )
+                : null,
+          ),
+        )
+        .toList(),
+  );
 
   Future<void> updateCaObjective(double caObjective) async {
     final year = currentYear;
@@ -281,10 +296,15 @@ class SsdmService extends ChangeNotifier {
 
   // --------------------------------------------------------------- Sales Plan
 
-  List<SalesPlanEntry> planFor(int? year, {String? ivId}) => _plan.values
-      .where((e) => (year == null || e.year == year) && (ivId == null || e.ivId == ivId))
-      .toList()
-    ..sort((a, b) => a.ivId.compareTo(b.ivId));
+  List<SalesPlanEntry> planFor(int? year, {String? ivId}) =>
+      _plan.values
+          .where(
+            (e) =>
+                (year == null || e.year == year) &&
+                (ivId == null || e.ivId == ivId),
+          )
+          .toList()
+        ..sort((a, b) => a.ivId.compareTo(b.ivId));
 
   double planTotal(int year) => _plan.values
       .where((e) => e.year == year)
@@ -329,7 +349,9 @@ class SsdmService extends ChangeNotifier {
   /// découpage (elles restent comptées dans [planTotal]).
   Map<String, double> planByIv(int year) {
     final result = <String, double>{};
-    for (final e in _plan.values.where((e) => e.year == year && e.ivId != kAllId)) {
+    for (final e in _plan.values.where(
+      (e) => e.year == year && e.ivId != kAllId,
+    )) {
       result[e.ivId] = (result[e.ivId] ?? 0) + e.targetAmount;
     }
     return result;
@@ -338,7 +360,9 @@ class SsdmService extends ChangeNotifier {
   /// CA réalisé par IV pour une année (hors lignes "Tous les IV").
   Map<String, double> realizedByIv(int year) {
     final result = <String, double>{};
-    for (final e in _plan.values.where((e) => e.year == year && e.ivId != kAllId)) {
+    for (final e in _plan.values.where(
+      (e) => e.year == year && e.ivId != kAllId,
+    )) {
       result[e.ivId] = (result[e.ivId] ?? 0) + e.realizedAmount;
     }
     return result;
@@ -378,7 +402,9 @@ class SsdmService extends ChangeNotifier {
       await a.save();
     }
     // Détache les visites liées avant suppression de la ligne.
-    for (final v in _visits.values.where((v) => v.planEntryIds?.contains(entry.id) == true)) {
+    for (final v in _visits.values.where(
+      (v) => v.planEntryIds?.contains(entry.id) == true,
+    )) {
       v.planEntryIds?.remove(entry.id);
       if (v.planEntryIds?.isEmpty == true) {
         v.planEntryIds = null;
@@ -395,10 +421,13 @@ class SsdmService extends ChangeNotifier {
 
   List<SalesAction> actionsFor(int? year, {String? ivId, bool? teamOnly}) =>
       _actions.values
-          .where((a) =>
-              (year == null || a.year == year) &&
-              (ivId == null || a.ivIds != null && a.ivIds!.contains(ivId)) &&
-              (teamOnly == null || (a.ivIds == null || a.ivIds!.isEmpty) == teamOnly))
+          .where(
+            (a) =>
+                (year == null || a.year == year) &&
+                (ivId == null || a.ivIds != null && a.ivIds!.contains(ivId)) &&
+                (teamOnly == null ||
+                    (a.ivIds == null || a.ivIds!.isEmpty) == teamOnly),
+          )
           .toList()
         ..sort((a, b) {
           final da = a.dueDate;
@@ -426,10 +455,12 @@ class SsdmService extends ChangeNotifier {
         });
     }
     return _actions.values
-        .where((a) =>
-            a.year == year &&
-            a.ivIds != null &&
-            a.ivIds!.any((id) => ivIds.contains(id)))
+        .where(
+          (a) =>
+              a.year == year &&
+              a.ivIds != null &&
+              a.ivIds!.any((id) => ivIds.contains(id)),
+        )
         .toList()
       ..sort((a, b) {
         final da = a.dueDate;
@@ -490,8 +521,10 @@ class SsdmService extends ChangeNotifier {
   }) async {
     final year = _selectedYear;
     if (year == null) return;
-    final builtSteps = steps ??
-        stepLabels?.where((l) => l.trim().isNotEmpty)
+    final builtSteps =
+        steps ??
+        stepLabels
+            ?.where((l) => l.trim().isNotEmpty)
             .map((l) => ActionStep(id: _uuid.v4(), label: l.trim()))
             .toList();
     final action = SalesAction(
@@ -519,7 +552,9 @@ class SsdmService extends ChangeNotifier {
 
   Future<void> deleteAction(SalesAction action) async {
     // Détache les visites liées avant suppression de l'action.
-    for (final v in _visits.values.where((v) => v.actionIds != null && v.actionIds!.contains(action.id))) {
+    for (final v in _visits.values.where(
+      (v) => v.actionIds != null && v.actionIds!.contains(action.id),
+    )) {
       v.actionIds?.remove(action.id);
       if (v.actionIds?.isEmpty == true) {
         v.actionIds = null;
@@ -538,14 +573,21 @@ class SsdmService extends ChangeNotifier {
   }
 
   /// Met à jour l'avancement d'une action et l'archive dans son historique.
-  Future<void> updateProgress(SalesAction action, int progress, {String comment = ''}) async {
+  Future<void> updateProgress(
+    SalesAction action,
+    int progress, {
+    String comment = '',
+  }) async {
     action.logUpdate(progress, comment: comment);
     await action.save();
     notifyListeners();
   }
 
   /// Met à jour le CA d'une action.
-  Future<void> updateActionRevenue(SalesAction action, double revenueAmount) async {
+  Future<void> updateActionRevenue(
+    SalesAction action,
+    double revenueAmount,
+  ) async {
     action.revenueAmount = revenueAmount;
     await action.save();
     notifyListeners();
@@ -555,7 +597,8 @@ class SsdmService extends ChangeNotifier {
   double averageProgress(int year) {
     final actions = actionsFor(year);
     if (actions.isEmpty) return 0;
-    return actions.fold(0.0, (sum, a) => sum + a.effectiveProgress) / actions.length;
+    return actions.fold(0.0, (sum, a) => sum + a.effectiveProgress) /
+        actions.length;
   }
 
   // ------------------------------------------------------------------- Étapes
@@ -566,18 +609,23 @@ class SsdmService extends ChangeNotifier {
     final computed = action.computedProgress;
     if (computed < 0) return;
     action.progress = computed;
-    final doneAll = action.activeSteps.isNotEmpty &&
+    final doneAll =
+        action.activeSteps.isNotEmpty &&
         action.activeSteps.every((s) => s.status == ActionStepStatus.done);
     if (doneAll) {
       action.status = ActionStatus.done;
     } else if (action.activeSteps.any((s) => !s.status.isClosed)) {
       action.status = ActionStatus.inProgress;
     }
-    action.history.add(ActionUpdate(
-      date: DateTime.now(),
-      progress: computed,
-      comment: comment.isEmpty ? 'Avancement calculé depuis les étapes' : comment,
-    ));
+    action.history.add(
+      ActionUpdate(
+        date: DateTime.now(),
+        progress: computed,
+        comment: comment.isEmpty
+            ? 'Avancement calculé depuis les étapes'
+            : comment,
+      ),
+    );
   }
 
   Future<void> addStep(
@@ -587,12 +635,14 @@ class SsdmService extends ChangeNotifier {
     DateTime? dueDate,
   }) async {
     action.steps ??= <ActionStep>[];
-    action.steps!.add(ActionStep(
-      id: _uuid.v4(),
-      label: label,
-      weight: weight <= 0 ? 1 : weight,
-      dueDate: dueDate,
-    ));
+    action.steps!.add(
+      ActionStep(
+        id: _uuid.v4(),
+        label: label,
+        weight: weight <= 0 ? 1 : weight,
+        dueDate: dueDate,
+      ),
+    );
     _syncFromSteps(action);
     await action.save();
     notifyListeners();
@@ -652,14 +702,25 @@ class SsdmService extends ChangeNotifier {
 
   // -------------------------------------------------- Visites
 
-  List<Visit> visitsFor(int? year, {String? clientId, String? ivId, String? actionId, String? planEntryId}) =>
+  List<Visit> visitsFor(
+    int? year, {
+    String? clientId,
+    String? ivId,
+    String? actionId,
+    String? planEntryId,
+  }) =>
       _visits.values
-          .where((v) =>
-              (year == null || v.year == year) &&
-              (clientId == null || v.clientId == clientId) &&
-              (ivId == null || v.ivIds != null && v.ivIds!.contains(ivId)) &&
-              (actionId == null || v.actionIds != null && v.actionIds!.contains(actionId)) &&
-              (planEntryId == null || v.planEntryIds != null && v.planEntryIds!.contains(planEntryId)))
+          .where(
+            (v) =>
+                (year == null || v.year == year) &&
+                (clientId == null || v.clientId == clientId) &&
+                (ivId == null || v.ivIds != null && v.ivIds!.contains(ivId)) &&
+                (actionId == null ||
+                    v.actionIds != null && v.actionIds!.contains(actionId)) &&
+                (planEntryId == null ||
+                    v.planEntryIds != null &&
+                        v.planEntryIds!.contains(planEntryId)),
+          )
           .toList()
         ..sort((a, b) => a.appointmentDate.compareTo(b.appointmentDate));
 
@@ -673,12 +734,16 @@ class SsdmService extends ChangeNotifier {
   }
 
   /// Nombre de visites pour une action.
-  int visitCountForAction(String actionId) =>
-      _visits.values.where((v) => v.actionIds != null && v.actionIds!.contains(actionId)).length;
+  int visitCountForAction(String actionId) => _visits.values
+      .where((v) => v.actionIds != null && v.actionIds!.contains(actionId))
+      .length;
 
   /// Nombre de visites pour une ligne du plan.
-  int visitCountForPlan(String planEntryId) =>
-      _visits.values.where((v) => v.planEntryIds != null && v.planEntryIds!.contains(planEntryId)).length;
+  int visitCountForPlan(String planEntryId) => _visits.values
+      .where(
+        (v) => v.planEntryIds != null && v.planEntryIds!.contains(planEntryId),
+      )
+      .length;
 
   Future<void> addVisit({
     required String clientId,
@@ -688,6 +753,7 @@ class SsdmService extends ChangeNotifier {
     List<String>? productRangeIds,
     List<String>? documentPaths,
     String? visitFrameId,
+    List<String>? followUpTasks,
     String title = '',
     required DateTime appointmentDate,
     int estimatedDuration = 60,
@@ -710,6 +776,7 @@ class SsdmService extends ChangeNotifier {
       productRangeIds: productRangeIds,
       documentPaths: documentPaths,
       visitFrameId: visitFrameId,
+      followUpTasks: followUpTasks,
       title: title,
       appointmentDate: appointmentDate,
       estimatedDuration: estimatedDuration,
@@ -737,8 +804,8 @@ class SsdmService extends ChangeNotifier {
 
   // -------------------------------------------------- Trames de Visite
 
-  List<VisitFrame> get visitFrames => _visitFrames.values.toList()
-    ..sort((a, b) => a.name.compareTo(b.name));
+  List<VisitFrame> get visitFrames =>
+      _visitFrames.values.toList()..sort((a, b) => a.name.compareTo(b.name));
 
   /// Retrouve une trame de visite par son id.
   VisitFrame? visitFrameOf(String? id) {
@@ -817,18 +884,22 @@ class SsdmService extends ChangeNotifier {
   /// Les actions d'équipe (sans IV) sont exclues de ce découpage.
   Map<String, double> progressByIv(int year) {
     final result = <String, List<int>>{};
-    for (final a in _actions.values.where((a) =>
-        a.year == year &&
-        a.ivIds != null &&
-        a.ivIds!.isNotEmpty &&
-        a.ivIds!.first != kAllId &&
-        a.status != ActionStatus.cancelled)) {
+    for (final a in _actions.values.where(
+      (a) =>
+          a.year == year &&
+          a.ivIds != null &&
+          a.ivIds!.isNotEmpty &&
+          a.ivIds!.first != kAllId &&
+          a.status != ActionStatus.cancelled,
+    )) {
       for (final ivId in a.ivIds!) {
         result[ivId] = [...(result[ivId] ?? <int>[]), a.effectiveProgress];
       }
     }
-    return result.map((id, values) =>
-        MapEntry(id, values.fold(0.0, (s, v) => s + v) / values.length));
+    return result.map(
+      (id, values) =>
+          MapEntry(id, values.fold(0.0, (s, v) => s + v) / values.length),
+    );
   }
 
   /// Avancement moyen des actions liées, par ligne du Sales Plan (0-100).
@@ -838,8 +909,9 @@ class SsdmService extends ChangeNotifier {
   Map<String, double?> progressByPlan(int year) {
     final result = <String, double?>{};
     for (final entry in _plan.values.where((e) => e.year == year)) {
-      final linked = _actions.values.where((a) =>
-          a.planEntryId == entry.id && a.status != ActionStatus.cancelled);
+      final linked = _actions.values.where(
+        (a) => a.planEntryId == entry.id && a.status != ActionStatus.cancelled,
+      );
       result[entry.id] = linked.isEmpty
           ? null
           : linked.fold(0.0, (s, a) => s + a.effectiveProgress) / linked.length;

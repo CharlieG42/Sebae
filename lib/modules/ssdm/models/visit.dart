@@ -108,6 +108,10 @@ class Visit extends HiveObject {
   @HiveField(19)
   String? visitFrameId;
 
+  /// Tâches de suivi à clôturer après le rendez-vous.
+  @HiveField(20)
+  List<String>? followUpTasks;
+
   Visit({
     required this.id,
     required this.year,
@@ -118,6 +122,7 @@ class Visit extends HiveObject {
     this.productRangeIds,
     this.documentPaths,
     this.visitFrameId,
+    this.followUpTasks = const [],
     this.title = '',
     required this.appointmentDate,
     this.estimatedDuration = 60,
@@ -130,8 +135,8 @@ class Visit extends HiveObject {
     this.statusIndex = 0,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   VisitStatus get status => VisitStatus.values[statusIndex];
 
@@ -152,17 +157,30 @@ class Visit extends HiveObject {
 
   /// Premier ID de ligne du Sales Plan (pour compatibilité ascendante).
   /// Retourne null si aucun planEntryIds n'est défini.
-  String? get planEntryId => planEntryIds?.isNotEmpty == true ? planEntryIds!.first : null;
+  String? get planEntryId =>
+      planEntryIds?.isNotEmpty == true ? planEntryIds!.first : null;
 
   /// Premier ID d'action (pour compatibilité ascendante).
   /// Retourne null si aucun actionIds n'est défini.
-  String? get actionId => actionIds?.isNotEmpty == true ? actionIds!.first : null;
+  String? get actionId =>
+      actionIds?.isNotEmpty == true ? actionIds!.first : null;
 
   /// Vrai si la visite a des gammes de produits associées.
-  bool get hasProductRanges => productRangeIds != null && productRangeIds!.isNotEmpty;
+  bool get hasProductRanges =>
+      productRangeIds != null && productRangeIds!.isNotEmpty;
 
   /// Vrai si la visite a des documents joints.
   bool get hasDocuments => documentPaths != null && documentPaths!.isNotEmpty;
+
+  /// Vrai si la visite contient des tâches de suivi après le RDV.
+  bool get hasFollowUpTasks =>
+      followUpTasks != null &&
+      followUpTasks!.any((task) => task.trim().isNotEmpty);
+
+  /// Tâches de suivi restantes, sans éléments vides.
+  List<String> get pendingFollowUpTasks => followUpTasks == null
+      ? const []
+      : followUpTasks!.where((task) => task.trim().isNotEmpty).toList();
 
   /// Vrai si la visite a une trame associée.
   bool get hasVisitFrame => visitFrameId != null && visitFrameId!.isNotEmpty;

@@ -49,7 +49,12 @@ class VisitsView extends StatelessWidget {
     return Stack(
       children: [
         ListView(
-          padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16, top: 16),
+          padding: const EdgeInsets.only(
+            bottom: 88,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
           children: [
             // Filtres
             _VisitFilters(),
@@ -107,9 +112,15 @@ class _VisitFiltersState extends State<_VisitFilters> {
                       border: OutlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Tous les clients')),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Tous les clients'),
+                      ),
                       for (final c in service.clients)
-                        DropdownMenuItem(value: c.id, child: Text(c.displayName)),
+                        DropdownMenuItem(
+                          value: c.id,
+                          child: Text(c.displayName),
+                        ),
                     ],
                     onChanged: (v) => setState(() => _selectedClientId = v),
                   ),
@@ -124,9 +135,15 @@ class _VisitFiltersState extends State<_VisitFilters> {
                       border: OutlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Tous les IV')),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Tous les IV'),
+                      ),
                       for (final iv in service.ivs)
-                        DropdownMenuItem(value: iv.id, child: Text(service.ivLabel(iv.id))),
+                        DropdownMenuItem(
+                          value: iv.id,
+                          child: Text(service.ivLabel(iv.id)),
+                        ),
                     ],
                     onChanged: (v) => setState(() => _selectedIvId = v),
                   ),
@@ -141,7 +158,10 @@ class _VisitFiltersState extends State<_VisitFilters> {
                       border: OutlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Tous les statuts')),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Tous les statuts'),
+                      ),
                       for (final s in VisitStatus.values)
                         DropdownMenuItem(value: s, child: Text(s.label)),
                     ],
@@ -316,8 +336,12 @@ class _VisitCard extends StatelessWidget {
                           final fileName = path.basename(docPath);
                           return Chip(
                             label: Text(fileName),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            avatar: const Icon(Icons.insert_drive_file, size: 16),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            avatar: const Icon(
+                              Icons.insert_drive_file,
+                              size: 16,
+                            ),
                           );
                         }),
                       ],
@@ -328,11 +352,17 @@ class _VisitCard extends StatelessWidget {
               if (visit.isLate)
                 Row(
                   children: [
-                    const Icon(Icons.warning_amber, color: Colors.orange, size: 16),
+                    const Icon(
+                      Icons.warning_amber,
+                      color: Colors.orange,
+                      size: 16,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'En retard',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ],
                 ),
@@ -383,9 +413,8 @@ class _VisitCard extends StatelessWidget {
       final scaffoldContext = context;
       await service.deleteVisit(visit);
       if (scaffoldContext.mounted) {
-        ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-          const SnackBar(content: Text('Visite supprimée')),
-        );
+        ScaffoldMessenger.of(scaffoldContext)
+            .showSnackBar(const SnackBar(content: Text('Visite supprimée')));
       }
     }
   }
@@ -468,6 +497,7 @@ Future<void> showVisitDialog(
         productRangeIds: result.productRangeIds,
         documentPaths: result.documentPaths,
         visitFrameId: result.visitFrameId,
+        followUpTasks: result.followUpTasks,
         title: result.title,
         appointmentDate: result.appointmentDate,
         estimatedDuration: result.estimatedDuration,
@@ -486,6 +516,7 @@ Future<void> showVisitDialog(
       visit.productRangeIds = result.productRangeIds;
       visit.documentPaths = result.documentPaths;
       visit.visitFrameId = result.visitFrameId;
+      visit.followUpTasks = result.followUpTasks;
       visit.title = result.title;
       visit.appointmentDate = result.appointmentDate;
       visit.estimatedDuration = result.estimatedDuration;
@@ -498,9 +529,8 @@ Future<void> showVisitDialog(
       await service.updateVisit(visit);
     }
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Visite enregistrée')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Visite enregistrée')));
     }
   }
 }
@@ -536,16 +566,21 @@ Widget _buildIvSelectionDisplay(List<String>? ivIds, SsdmService service) {
     spacing: 4,
     runSpacing: 4,
     children: ivIds
-        .map((id) => Chip(
-              label: Text(service.ivLabel(id)),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ))
+        .map(
+          (id) => Chip(
+            label: Text(service.ivLabel(id)),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        )
         .toList(),
   );
 }
 
 /// Affiche l'affichage de la sélection des Gammes de Produits.
-Widget _buildProductRangeSelectionDisplay(List<String>? productRangeIds, SsdmService service) {
+Widget _buildProductRangeSelectionDisplay(
+  List<String>? productRangeIds,
+  SsdmService service,
+) {
   if (productRangeIds == null || productRangeIds.isEmpty) {
     return const Text('Aucune', style: TextStyle(color: Colors.grey));
   }
@@ -553,10 +588,12 @@ Widget _buildProductRangeSelectionDisplay(List<String>? productRangeIds, SsdmSer
     spacing: 4,
     runSpacing: 4,
     children: productRangeIds
-        .map((id) => Chip(
-              label: Text(service.productRangeOf(id)?.displayName ?? '?'),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ))
+        .map(
+          (id) => Chip(
+            label: Text(service.productRangeOf(id)?.displayName ?? '?'),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        )
         .toList(),
   );
 }
@@ -589,7 +626,9 @@ Future<List<String>?> _showProductRangeMultiSelectDialog(
                       CheckboxListTile(
                         value: selectedSet.contains(pr.id),
                         title: Text(pr.displayName),
-                        subtitle: pr.description.isNotEmpty ? Text(pr.description) : null,
+                        subtitle: pr.description.isNotEmpty
+                            ? Text(pr.description)
+                            : null,
                         controlAffinity: ListTileControlAffinity.leading,
                         onChanged: (checked) {
                           setState(() {
@@ -613,7 +652,10 @@ Future<List<String>?> _showProductRangeMultiSelectDialog(
             child: const Text('Annuler'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, selectedSet.isEmpty ? null : selectedSet.toList()),
+            onPressed: () => Navigator.pop(
+              context,
+              selectedSet.isEmpty ? null : selectedSet.toList(),
+            ),
             child: const Text('OK'),
           ),
         ],
@@ -633,9 +675,11 @@ Future<List<String>?> _showIvMultiSelectDialogForVisits(
 }) async {
   final selectedSet = (selectedIvIds ?? []).toSet();
   final hasAllId = selectedSet.contains(kAllId);
-  List<String> tempSelected = (selectedIvIds ?? []).where((id) => id != kAllId).toList();
+  List<String> tempSelected = (selectedIvIds ?? [])
+      .where((id) => id != kAllId)
+      .toList();
   bool teamOnly = selectedSet.isEmpty || hasAllId;
-  
+
   final result = await showDialog<List<String>?>(
     context: context,
     builder: (context) => StatefulBuilder(
@@ -740,7 +784,7 @@ Future<List<String>?> _showIvMultiSelectDialogForVisits(
       ),
     ),
   );
-  
+
   return result;
 }
 
@@ -756,6 +800,7 @@ class _VisitDialogState extends State<_VisitDialog> {
   late List<String>? _productRangeIds;
   late List<String>? _documentPaths;
   late String? _visitFrameId;
+  late List<String>? _followUpTasks;
   late String _notesBefore;
   late String _notesDuring;
   late String _notesAfter;
@@ -764,6 +809,7 @@ class _VisitDialogState extends State<_VisitDialog> {
   final _documentPathController = TextEditingController();
   final _documentUrlController = TextEditingController();
   final _productRangeController = TextEditingController();
+  final _followUpTaskController = TextEditingController();
   final _titleController = TextEditingController();
   final _locationController = TextEditingController();
   final _durationController = TextEditingController();
@@ -786,6 +832,7 @@ class _VisitDialogState extends State<_VisitDialog> {
     _productRangeIds = v?.productRangeIds ?? [];
     _documentPaths = v?.documentPaths ?? [];
     _visitFrameId = v?.visitFrameId;
+    _followUpTasks = v?.followUpTasks ?? [];
     _notesBefore = v?.notesBefore ?? '';
     _notesDuring = v?.notesDuring ?? '';
     _notesAfter = v?.notesAfter ?? '';
@@ -803,6 +850,7 @@ class _VisitDialogState extends State<_VisitDialog> {
   void dispose() {
     _documentUrlController.dispose();
     _productRangeController.dispose();
+    _followUpTaskController.dispose();
     _titleController.dispose();
     _locationController.dispose();
     _durationController.dispose();
@@ -817,7 +865,9 @@ class _VisitDialogState extends State<_VisitDialog> {
     final service = widget.service;
 
     return AlertDialog(
-      title: Text(widget.visit == null ? 'Nouvelle visite' : 'Modifier la visite'),
+      title: Text(
+        widget.visit == null ? 'Nouvelle visite' : 'Modifier la visite',
+      ),
       content: SizedBox(
         width: 600,
         child: SingleChildScrollView(
@@ -837,7 +887,8 @@ class _VisitDialogState extends State<_VisitDialog> {
                     DropdownMenuItem(value: c.id, child: Text(c.displayName)),
                 ],
                 onChanged: (v) => setState(() => _clientId = v ?? ''),
-                validator: (v) => v == null || v.isEmpty ? 'Client obligatoire' : null,
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Client obligatoire' : null,
               ),
               const SizedBox(height: 12),
 
@@ -932,7 +983,8 @@ class _VisitDialogState extends State<_VisitDialog> {
                         labelText: 'Durée (minutes)',
                         border: OutlineInputBorder(),
                       ),
-                      onChanged: (v) => _estimatedDuration = int.tryParse(v) ?? 60,
+                      onChanged: (v) =>
+                          _estimatedDuration = int.tryParse(v) ?? 60,
                     ),
                   ),
                 ],
@@ -969,7 +1021,10 @@ class _VisitDialogState extends State<_VisitDialog> {
                     border: OutlineInputBorder(),
                     suffixIcon: Icon(Icons.expand_more),
                   ),
-                  child: _buildProductRangeSelectionDisplay(_productRangeIds, service),
+                  child: _buildProductRangeSelectionDisplay(
+                    _productRangeIds,
+                    service,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1072,8 +1127,13 @@ class _VisitDialogState extends State<_VisitDialog> {
                             return Chip(
                               label: Text(fileName),
                               deleteIcon: const Icon(Icons.close, size: 16),
-                              onDeleted: () => setState(() => _documentPaths!.remove(docPath)),
-                              avatar: const Icon(Icons.insert_drive_file, size: 18),
+                              onDeleted: () => setState(
+                                () => _documentPaths!.remove(docPath),
+                              ),
+                              avatar: const Icon(
+                                Icons.insert_drive_file,
+                                size: 18,
+                              ),
                             );
                           }).toList(),
                         ),
@@ -1095,10 +1155,7 @@ class _VisitDialogState extends State<_VisitDialog> {
                 items: [
                   const DropdownMenuItem(value: null, child: Text('Aucune')),
                   for (final frame in service.visitFrames)
-                    DropdownMenuItem(
-                      value: frame.id,
-                      child: Text(frame.name),
-                    ),
+                    DropdownMenuItem(value: frame.id, child: Text(frame.name)),
                 ],
                 onChanged: (v) => setState(() => _visitFrameId = v),
               ),
@@ -1116,13 +1173,80 @@ class _VisitDialogState extends State<_VisitDialog> {
                   for (final s in VisitStatus.values)
                     DropdownMenuItem(value: s, child: Text(s.label)),
                 ],
-                onChanged: (v) => setState(() => _status = v ?? VisitStatus.planned),
+                onChanged: (v) =>
+                    setState(() => _status = v ?? VisitStatus.planned),
               ),
+              const SizedBox(height: 12),
+
+              // Préparation & tâches de suivi
+              Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Parcours guidé de la visite',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Préparez le rendez-vous, notez les informations clés et formalisez le suivi à faire après la visite.',
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _followUpTaskController,
+                              decoration: const InputDecoration(
+                                labelText: 'Tâche de suivi après le RDV',
+                                border: OutlineInputBorder(),
+                                hintText: 'Envoyer le devis, relancer, etc.',
+                              ),
+                              onSubmitted: (_) => _addFollowUpTask(),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            onPressed: _addFollowUpTask,
+                            icon: const Icon(Icons.add_task),
+                            tooltip: 'Ajouter une tâche de suivi',
+                          ),
+                        ],
+                      ),
+                      if (_followUpTasks != null &&
+                          _followUpTasks!.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _followUpTasks!.map((task) {
+                            return InputChip(
+                              label: Text(task),
+                              onDeleted: () => setState(() {
+                                _followUpTasks = (_followUpTasks ?? [])
+                                  ..remove(task);
+                              }),
+                              deleteIcon: const Icon(Icons.close, size: 16),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 12),
 
               // Notes
               const Divider(height: 24),
-              const Text('Notes', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Notes',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: _notesBeforeController,
@@ -1165,10 +1289,7 @@ class _VisitDialogState extends State<_VisitDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Annuler'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Enregistrer'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('Enregistrer')),
       ],
     );
   }
@@ -1193,6 +1314,15 @@ class _VisitDialogState extends State<_VisitDialog> {
     }
   }
 
+  void _addFollowUpTask() {
+    final task = _followUpTaskController.text.trim();
+    if (task.isEmpty) return;
+    setState(() {
+      _followUpTasks = (_followUpTasks ?? []).toList()..add(task);
+      _followUpTaskController.clear();
+    });
+  }
+
   void _submit() {
     if (_clientId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1201,26 +1331,29 @@ class _VisitDialogState extends State<_VisitDialog> {
       return;
     }
 
-    Navigator.of(context).pop(Visit(
-      id: widget.visit?.id ?? '',
-      year: widget.visit?.year ?? 0,
-      clientId: _clientId,
-      ivIds: _ivIds,
-      planEntryIds: _planEntryId != null ? [_planEntryId!] : null,
-      actionIds: _actionId != null ? [_actionId!] : null,
-      title: _title,
-      appointmentDate: _appointmentDate,
-      estimatedDuration: _estimatedDuration,
-      location: _location,
-      productRangeIds: _productRangeIds,
-      documentPaths: _documentPaths,
-      visitFrameId: _visitFrameId,
-      themes: const [],
-      notesBefore: _notesBefore,
-      notesDuring: _notesDuring,
-      notesAfter: _notesAfter,
-      statusIndex: _status.index,
-    ));
+    Navigator.of(context).pop(
+      Visit(
+        id: widget.visit?.id ?? '',
+        year: widget.visit?.year ?? 0,
+        clientId: _clientId,
+        ivIds: _ivIds,
+        planEntryIds: _planEntryId != null ? [_planEntryId!] : null,
+        actionIds: _actionId != null ? [_actionId!] : null,
+        title: _title,
+        appointmentDate: _appointmentDate,
+        estimatedDuration: _estimatedDuration,
+        location: _location,
+        productRangeIds: _productRangeIds,
+        documentPaths: _documentPaths,
+        visitFrameId: _visitFrameId,
+        followUpTasks: _followUpTasks,
+        themes: const [],
+        notesBefore: _notesBefore,
+        notesDuring: _notesDuring,
+        notesAfter: _notesAfter,
+        statusIndex: _status.index,
+      ),
+    );
   }
 }
 

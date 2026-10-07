@@ -6,12 +6,32 @@ import 'package:provider/provider.dart';
 import '../../../shared/models/iv.dart';
 import '../../../shared/models/product_range.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../models/sales_action.dart';
 import '../models/visit.dart';
 import '../services/ssdm_service.dart';
 import '../ssdm_constants.dart';
 import 'visit_detail_view.dart';
 
 final _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+
+/// Classe locale pour gérer les tâches de suivi avec leur statut (terminée/non terminée).
+class _FollowUpTask {
+  final String text;
+  final bool isCompleted;
+
+  const _FollowUpTask({required this.text, this.isCompleted = false});
+
+  /// Convertit en String pour le stockage (format: "text" ou "[DONE] text")
+  String toStorageString() => isCompleted ? '[DONE] $text' : text;
+
+  /// Crée depuis une String de stockage
+  static _FollowUpTask fromStorageString(String stored) {
+    if (stored.startsWith('[DONE] ')) {
+      return _FollowUpTask(text: stored.substring(7), isCompleted: true);
+    }
+    return _FollowUpTask(text: stored);
+  }
+}
 
 /// Vue des visites clients.
 ///
@@ -91,6 +111,42 @@ class _VisitFiltersState extends State<_VisitFilters> {
   String? _selectedClientId;
   String? _selectedIvId;
   VisitStatus? _selectedStatus;
+  
+  final _clientFilterController = TextEditingController();
+  final _ivFilterController = TextEditingController();
+  final _statusFilterController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialiser les controllers
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _updateControllers(context);
+      }
+    });
+  }
+  
+  void _updateControllers(BuildContext context) {
+    final service = context.read<SsdmService>();
+    _clientFilterController.text = _selectedClientId != null 
+        ? service.clientLabel(_selectedClientId!) 
+        : '';
+    _ivFilterController.text = _selectedIvId != null 
+        ? service.ivLabel(_selectedIvId!) 
+        : '';
+    _statusFilterController.text = _selectedStatus != null 
+        ? _selectedStatus!.label 
+        : '';
+  }
+
+  @override
+  void dispose() {
+    _clientFilterController.dispose();
+    _ivFilterController.dispose();
+    _statusFilterController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,68 +160,154 @@ class _VisitFiltersState extends State<_VisitFilters> {
             Row(
               children: [
                 Expanded(
-                  child: DropdownButtonFormField<String?>(
-                    initialValue: _selectedClientId,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Client',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('Tous les clients'),
-                      ),
-                      for (final c in service.clients)
-                        DropdownMenuItem(
-                          value: c.id,
-                          child: Text(c.displayName),
+                  child: Autocomplete<String>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text.isEmpty) {
+                        return ['', ...service.clients.map((c) => c.id)];
+                      }
+                      return service.clients
+                          .where((c) => c.displayName
+                              .toLowerCase()
+                              .contains(textEditingValue.text.toLowerCase()))
+                          .map((c) => c.id)
+                          .toList();
+                    },
+                    displayStringForOption: (String option) {
+                      if (option.isEmpty) return 'Tous les clients';
+                      return service.clientLabel(option);
+                    },
+                    fieldViewBuilder: (
+                      BuildContext context,
+                      TextEditingController fieldTextEditingController,
+                      FocusNode fieldFocusNode,
+                      VoidCallback onFieldSubmitted,
+                    ) {
+                      fieldTextEditingController.text = _clientFilterController.text;
+                      return TextFormField(
+                        controller: _clientFilterController,
+                        focusNode: fieldFocusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Client',
+                          border: OutlineInputBorder(),
                         ),
-                    ],
-                    onChanged: (v) => setState(() => _selectedClientId = v),
+                        onFieldSubmitted: (String value) => onFieldSubmitted(),
+                      );
+                    },
+                    onSelected: (String selection) {
+                      setState(() {
+                        _selectedClientId = selection.isEmpty ? null : selection;
+                        _clientFilterController.text = selection.isEmpty 
+                            ? '' 
+                            : service.clientLabel(selection);
+                      });
+                    },
+                    optionsMaxHeight: 200,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: DropdownButtonFormField<String?>(
-                    initialValue: _selectedIvId,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'IV',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('Tous les IV'),
-                      ),
-                      for (final iv in service.ivs)
-                        DropdownMenuItem(
-                          value: iv.id,
-                          child: Text(service.ivLabel(iv.id)),
+                  child: Autocomplete<String>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text.isEmpty) {
+                        return ['', ...service.ivs.map((iv) => iv.id)];
+                      }
+                      return service.ivs
+                          .where((iv) => service
+                              .ivLabel(iv.id)
+                              .toLowerCase()
+                              .contains(textEditingValue.text.toLowerCase()))
+                          .map((iv) => iv.id)
+                          .toList();
+                    },
+                    displayStringForOption: (String option) {
+                      if (option.isEmpty) return 'Tous les IV';
+                      return service.ivLabel(option);
+                    },
+                    fieldViewBuilder: (
+                      BuildContext context,
+                      TextEditingController fieldTextEditingController,
+                      FocusNode fieldFocusNode,
+                      VoidCallback onFieldSubmitted,
+                    ) {
+                      fieldTextEditingController.text = _ivFilterController.text;
+                      return TextFormField(
+                        controller: _ivFilterController,
+                        focusNode: fieldFocusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'IV',
+                          border: OutlineInputBorder(),
                         ),
-                    ],
-                    onChanged: (v) => setState(() => _selectedIvId = v),
+                        onFieldSubmitted: (String value) => onFieldSubmitted(),
+                      );
+                    },
+                    onSelected: (String selection) {
+                      setState(() {
+                        _selectedIvId = selection.isEmpty ? null : selection;
+                        _ivFilterController.text = selection.isEmpty 
+                            ? '' 
+                            : service.ivLabel(selection);
+                      });
+                    },
+                    optionsMaxHeight: 200,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: DropdownButtonFormField<VisitStatus?>(
-                    initialValue: _selectedStatus,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Statut',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('Tous les statuts'),
-                      ),
-                      for (final s in VisitStatus.values)
-                        DropdownMenuItem(value: s, child: Text(s.label)),
-                    ],
-                    onChanged: (v) => setState(() => _selectedStatus = v),
+                  child: Autocomplete<String>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text.isEmpty) {
+                        return ['', ...VisitStatus.values.map((s) => s.name)];
+                      }
+                      return VisitStatus.values
+                          .where((s) => s.label
+                              .toLowerCase()
+                              .contains(textEditingValue.text.toLowerCase()))
+                          .map((s) => s.name)
+                          .toList();
+                    },
+                    displayStringForOption: (String option) {
+                      if (option.isEmpty) return 'Tous les statuts';
+                      final status = VisitStatus.values.firstWhere(
+                            (s) => s.name == option,
+                            orElse: () => VisitStatus.planned,
+                          );
+                      return status.label;
+                    },
+                    fieldViewBuilder: (
+                      BuildContext context,
+                      TextEditingController fieldTextEditingController,
+                      FocusNode fieldFocusNode,
+                      VoidCallback onFieldSubmitted,
+                    ) {
+                      fieldTextEditingController.text = _statusFilterController.text;
+                      return TextFormField(
+                        controller: _statusFilterController,
+                        focusNode: fieldFocusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Statut',
+                          border: OutlineInputBorder(),
+                        ),
+                        onFieldSubmitted: (String value) => onFieldSubmitted(),
+                      );
+                    },
+                    onSelected: (String selection) {
+                      if (selection.isEmpty) {
+                        setState(() {
+                          _selectedStatus = null;
+                          _statusFilterController.text = '';
+                        });
+                      } else {
+                        final status = VisitStatus.values.firstWhere(
+                          (s) => s.name == selection,
+                          orElse: () => VisitStatus.planned,
+                        );
+                        setState(() {
+                          _selectedStatus = status;
+                          _statusFilterController.text = status.label;
+                        });
+                      }
+                    },
+                    optionsMaxHeight: 200,
                   ),
                 ),
               ],
@@ -666,6 +808,229 @@ Future<List<String>?> _showProductRangeMultiSelectDialog(
   return result;
 }
 
+/// Affiche l'affichage de la sélection des lignes de Sales Plan.
+Widget _buildPlanEntrySelectionDisplay(
+  List<String>? planEntryIds,
+  SsdmService service,
+) {
+  if (planEntryIds == null || planEntryIds.isEmpty) {
+    return const Text('Aucune', style: TextStyle(color: Colors.grey));
+  }
+  return Wrap(
+    spacing: 4,
+    runSpacing: 4,
+    children: planEntryIds
+        .map(
+          (id) => Chip(
+            label: Text(service.planLineLabel(id)),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        )
+        .toList(),
+  );
+}
+
+/// Dialogue de sélection multiple de lignes de Sales Plan avec recherche.
+Future<List<String>?> _showPlanEntryMultiSelectDialog(
+  BuildContext context, {
+  required List<String>? selectedIds,
+  required int year,
+  required SsdmService service,
+}) async {
+  final selectedSet = (selectedIds ?? []).toSet();
+  final TextEditingController searchController = TextEditingController();
+
+  final result = await showDialog<List<String>?>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('Sélectionner les lignes de Sales Plan'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Barre de recherche
+              TextField(
+                controller: searchController,
+                decoration: const InputDecoration(
+                  labelText: 'Rechercher',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onChanged: (value) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final e in service.planFor(year))
+                      if (searchController.text.isEmpty ||
+                          service.planLineLabel(e.id).toLowerCase().contains(
+                                searchController.text.toLowerCase()))
+                        CheckboxListTile(
+                          value: selectedSet.contains(e.id),
+                          title: Text(service.planLineLabel(e.id)),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          onChanged: (checked) {
+                            setState(() {
+                              if (checked == true) {
+                                selectedSet.add(e.id);
+                              } else {
+                                selectedSet.remove(e.id);
+                              }
+                            });
+                          },
+                        ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              context,
+              selectedSet.isEmpty ? null : selectedSet.toList(),
+            ),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  searchController.dispose();
+  return result;
+}
+
+/// Affiche l'affichage de la sélection des Actions.
+Widget _buildActionSelectionDisplay(
+  List<String>? actionIds,
+  SsdmService service,
+  int year,
+) {
+  if (actionIds == null || actionIds.isEmpty) {
+    return const Text('Aucune', style: TextStyle(color: Colors.grey));
+  }
+  return Wrap(
+    spacing: 4,
+    runSpacing: 4,
+    children: actionIds
+        .map(
+          (id) => Chip(
+            label: Text(service.actionsFor(year).firstWhere(
+                  (a) => a.id == id,
+                  orElse: () => SalesAction(
+                        id: '',
+                        year: 0,
+                        title: 'Action inconnue',
+                        description: '',
+                        ivIds: [],
+                        statusIndex: 0,
+                        progress: 0,
+                        createdAt: DateTime.now(),
+                        history: [],
+                      ),
+                ).title),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        )
+        .toList(),
+  );
+}
+
+/// Dialogue de sélection multiple d'Actions avec recherche.
+Future<List<String>?> _showActionMultiSelectDialog(
+  BuildContext context, {
+  required List<String>? selectedIds,
+  required int year,
+  required SsdmService service,
+}) async {
+  final selectedSet = (selectedIds ?? []).toSet();
+  final TextEditingController searchController = TextEditingController();
+
+  final result = await showDialog<List<String>?>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('Sélectionner les Actions'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Barre de recherche
+              TextField(
+                controller: searchController,
+                decoration: const InputDecoration(
+                  labelText: 'Rechercher',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onChanged: (value) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final a in service.actionsFor(year))
+                      if (searchController.text.isEmpty ||
+                          a.title.toLowerCase().contains(
+                                searchController.text.toLowerCase()))
+                        CheckboxListTile(
+                          value: selectedSet.contains(a.id),
+                          title: Text(a.title),
+                          subtitle: a.description.isNotEmpty
+                              ? Text(a.description)
+                              : null,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          onChanged: (checked) {
+                            setState(() {
+                              if (checked == true) {
+                                selectedSet.add(a.id);
+                              } else {
+                                selectedSet.remove(a.id);
+                              }
+                            });
+                          },
+                        ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              context,
+              selectedSet.isEmpty ? null : selectedSet.toList(),
+            ),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  searchController.dispose();
+  return result;
+}
+
 /// Dialogue de sélection multiple d'IV avec cases à cocher pour les visites.
 Future<List<String>?> _showIvMultiSelectDialogForVisits(
   BuildContext context, {
@@ -791,8 +1156,8 @@ Future<List<String>?> _showIvMultiSelectDialogForVisits(
 class _VisitDialogState extends State<_VisitDialog> {
   late String _clientId;
   late List<String>? _ivIds;
-  late String? _planEntryId;
-  late String? _actionId;
+  late List<String>? _planEntryIds;
+  late List<String>? _actionIds;
   late String _title;
   late DateTime _appointmentDate;
   late int _estimatedDuration;
@@ -800,7 +1165,7 @@ class _VisitDialogState extends State<_VisitDialog> {
   late List<String>? _productRangeIds;
   late List<String>? _documentPaths;
   late String? _visitFrameId;
-  late List<String>? _followUpTasks;
+  late List<_FollowUpTask> _followUpTaskObjects;
   late String _notesBefore;
   late String _notesDuring;
   late String _notesAfter;
@@ -816,6 +1181,9 @@ class _VisitDialogState extends State<_VisitDialog> {
   final _notesBeforeController = TextEditingController();
   final _notesDuringController = TextEditingController();
   final _notesAfterController = TextEditingController();
+  
+  // Controller pour le champ Client (sélection unique)
+  final _clientController = TextEditingController();
 
   @override
   void initState() {
@@ -823,16 +1191,23 @@ class _VisitDialogState extends State<_VisitDialog> {
     final v = widget.visit;
     _clientId = v?.clientId ?? widget.presetClientId ?? '';
     _ivIds = v?.ivIds ?? [];
-    _planEntryId = v?.planEntryId ?? widget.presetPlanEntryId;
-    _actionId = v?.actionId ?? widget.presetActionId;
+    _planEntryIds = v?.planEntryIds ?? (widget.presetPlanEntryId != null ? [widget.presetPlanEntryId!] : []);
+    _actionIds = v?.actionIds ?? (widget.presetActionId != null ? [widget.presetActionId!] : []);
     _title = v?.title ?? '';
     _appointmentDate = v?.appointmentDate ?? DateTime.now();
     _estimatedDuration = v?.estimatedDuration ?? 60;
     _location = v?.location ?? '';
+    
+    // Initialiser les controllers Autocomplete
+    _clientController.text = _clientId.isNotEmpty 
+        ? widget.service.clientLabel(_clientId) 
+        : '';
+    // Les controllers pour planEntryIds et actionIds ne sont plus nécessaires
+    // car ce sont maintenant des sélections multiples avec dialogues
     _productRangeIds = v?.productRangeIds ?? [];
     _documentPaths = v?.documentPaths ?? [];
     _visitFrameId = v?.visitFrameId;
-    _followUpTasks = v?.followUpTasks ?? [];
+    _followUpTaskObjects = (v?.followUpTasks ?? []).map((task) => _FollowUpTask.fromStorageString(task)).toList();
     _notesBefore = v?.notesBefore ?? '';
     _notesDuring = v?.notesDuring ?? '';
     _notesAfter = v?.notesAfter ?? '';
@@ -851,6 +1226,7 @@ class _VisitDialogState extends State<_VisitDialog> {
     _documentUrlController.dispose();
     _productRangeController.dispose();
     _followUpTaskController.dispose();
+    _clientController.dispose();
     _titleController.dispose();
     _locationController.dispose();
     _durationController.dispose();
@@ -875,20 +1251,47 @@ class _VisitDialogState extends State<_VisitDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Client
-              DropdownButtonFormField<String>(
-                initialValue: _clientId.isNotEmpty ? _clientId : null,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Client *',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  for (final c in service.clients)
-                    DropdownMenuItem(value: c.id, child: Text(c.displayName)),
-                ],
-                onChanged: (v) => setState(() => _clientId = v ?? ''),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Client obligatoire' : null,
+              Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return service.clients.map((c) => c.id).toList();
+                  }
+                  return service.clients
+                      .where((c) => c.displayName
+                          .toLowerCase()
+                          .contains(textEditingValue.text.toLowerCase()))
+                      .map((c) => c.id)
+                      .toList();
+                },
+                displayStringForOption: (String option) {
+                  return service.clientLabel(option);
+                },
+                fieldViewBuilder: (
+                  BuildContext context,
+                  TextEditingController fieldTextEditingController,
+                  FocusNode fieldFocusNode,
+                  VoidCallback onFieldSubmitted,
+                ) {
+                  // Utiliser notre controller dédié
+                  fieldTextEditingController.text = _clientController.text;
+                  return TextFormField(
+                    controller: _clientController,
+                    focusNode: fieldFocusNode,
+                    decoration: const InputDecoration(
+                      labelText: 'Client *',
+                      border: OutlineInputBorder(),
+                    ),
+                    onFieldSubmitted: (String value) => onFieldSubmitted(),
+                    validator: (v) => v == null || v.isEmpty ? 'Client obligatoire' : null,
+                  );
+                },
+                onSelected: (String selection) {
+                  setState(() {
+                    _clientId = selection;
+                    _clientController.text = service.clientLabel(selection);
+                  });
+                },
+                optionsMaxHeight: 200,
               ),
               const SizedBox(height: 12),
 
@@ -916,40 +1319,51 @@ class _VisitDialogState extends State<_VisitDialog> {
               ),
               const SizedBox(height: 12),
 
-              // Ligne du Sales Plan
-              DropdownButtonFormField<String?>(
-                initialValue: _planEntryId,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Ligne Sales Plan',
-                  border: OutlineInputBorder(),
+              // Lignes du Sales Plan - sélection multiple avec combobox
+              InkWell(
+                onTap: () async {
+                  final selected = await _showPlanEntryMultiSelectDialog(
+                    context,
+                    selectedIds: _planEntryIds,
+                    year: service.selectedYear!,
+                    service: service,
+                  );
+                  if (selected != null) {
+                    setState(() => _planEntryIds = selected);
+                  }
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Lignes Sales Plan',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.expand_more),
+                  ),
+                  child: _buildPlanEntrySelectionDisplay(_planEntryIds, service),
                 ),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('Aucune')),
-                  for (final e in service.planFor(service.selectedYear))
-                    DropdownMenuItem(
-                      value: e.id,
-                      child: Text(service.planLineLabel(e.id)),
-                    ),
-                ],
-                onChanged: (v) => setState(() => _planEntryId = v),
               ),
               const SizedBox(height: 12),
 
-              // Action
-              DropdownButtonFormField<String?>(
-                initialValue: _actionId,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Action',
-                  border: OutlineInputBorder(),
+              // Actions - sélection multiple avec combobox
+              InkWell(
+                onTap: () async {
+                  final selected = await _showActionMultiSelectDialog(
+                    context,
+                    selectedIds: _actionIds,
+                    year: service.selectedYear!,
+                    service: service,
+                  );
+                  if (selected != null) {
+                    setState(() => _actionIds = selected);
+                  }
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Actions',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.expand_more),
+                  ),
+                  child: _buildActionSelectionDisplay(_actionIds, service, service.selectedYear!),
                 ),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('Aucune')),
-                  for (final a in service.actionsFor(service.selectedYear))
-                    DropdownMenuItem(value: a.id, child: Text(a.title)),
-                ],
-                onChanged: (v) => setState(() => _actionId = v),
               ),
               const SizedBox(height: 12),
 
@@ -1216,20 +1630,29 @@ class _VisitDialogState extends State<_VisitDialog> {
                           ),
                         ],
                       ),
-                      if (_followUpTasks != null &&
-                          _followUpTasks!.isNotEmpty) ...[
+                      if (_followUpTaskObjects.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: _followUpTasks!.map((task) {
-                            return InputChip(
-                              label: Text(task),
-                              onDeleted: () => setState(() {
-                                _followUpTasks = (_followUpTasks ?? [])
-                                  ..remove(task);
+                          children: _followUpTaskObjects.map((task) {
+                            return FilterChip(
+                              label: Text(task.text),
+                              selected: task.isCompleted,
+                              onSelected: (selected) => setState(() {
+                                final index = _followUpTaskObjects.indexOf(task);
+                                _followUpTaskObjects[index] = _FollowUpTask(
+                                  text: task.text,
+                                  isCompleted: !task.isCompleted,
+                                );
                               }),
+                              avatar: task.isCompleted 
+                                  ? const Icon(Icons.check, size: 16, color: Colors.green)
+                                  : null,
                               deleteIcon: const Icon(Icons.close, size: 16),
+                              onDeleted: () => setState(() {
+                                _followUpTaskObjects.remove(task);
+                              }),
                             );
                           }).toList(),
                         ),
@@ -1318,7 +1741,7 @@ class _VisitDialogState extends State<_VisitDialog> {
     final task = _followUpTaskController.text.trim();
     if (task.isEmpty) return;
     setState(() {
-      _followUpTasks = (_followUpTasks ?? []).toList()..add(task);
+      _followUpTaskObjects = [..._followUpTaskObjects, _FollowUpTask(text: task)];
       _followUpTaskController.clear();
     });
   }
@@ -1337,8 +1760,8 @@ class _VisitDialogState extends State<_VisitDialog> {
         year: widget.visit?.year ?? 0,
         clientId: _clientId,
         ivIds: _ivIds,
-        planEntryIds: _planEntryId != null ? [_planEntryId!] : null,
-        actionIds: _actionId != null ? [_actionId!] : null,
+        planEntryIds: _planEntryIds,
+        actionIds: _actionIds,
         title: _title,
         appointmentDate: _appointmentDate,
         estimatedDuration: _estimatedDuration,
@@ -1346,7 +1769,7 @@ class _VisitDialogState extends State<_VisitDialog> {
         productRangeIds: _productRangeIds,
         documentPaths: _documentPaths,
         visitFrameId: _visitFrameId,
-        followUpTasks: _followUpTasks,
+        followUpTasks: _followUpTaskObjects.map((task) => task.toStorageString()).toList(),
         themes: const [],
         notesBefore: _notesBefore,
         notesDuring: _notesDuring,

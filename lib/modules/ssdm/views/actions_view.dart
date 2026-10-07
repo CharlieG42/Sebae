@@ -760,25 +760,45 @@ Future<void> showActionDialog(BuildContext context) async {
               ),
               if (planEntries.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                DropdownButtonFormField<String?>(
-                  initialValue: null,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Ligne du Sales Plan (optionnel)',
-                  ),
-                  items: [
-                    const DropdownMenuItem(
-                        value: null, child: Text('Aucune ligne')),
-                    for (final e in planEntries)
-                      DropdownMenuItem(
-                        value: e.id,
-                        child: Text(
-                          service.planLineLabel(e.id),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                Autocomplete<String>(
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text.isEmpty) {
+                      return planEntries.map((e) => e.id).toList();
+                    }
+                    final searchText = textEditingValue.text.toLowerCase();
+                    return planEntries
+                        .where((e) => service
+                            .planLineLabel(e.id)
+                            .toLowerCase()
+                            .contains(searchText))
+                        .map((e) => e.id)
+                        .toList();
+                  },
+                  displayStringForOption: (String option) {
+                    return service.planLineLabel(option);
+                  },
+                  fieldViewBuilder: (
+                    BuildContext context,
+                    TextEditingController fieldTextEditingController,
+                    FocusNode fieldFocusNode,
+                    VoidCallback onFieldSubmitted,
+                  ) {
+                    return TextFormField(
+                      controller: fieldTextEditingController,
+                      focusNode: fieldFocusNode,
+                      decoration: const InputDecoration(
+                        labelText: 'Ligne du Sales Plan (optionnel)',
+                        border: OutlineInputBorder(),
                       ),
-                  ],
-                  onChanged: (v) => setDialogState(() => planEntryId = v),
+                      onFieldSubmitted: (String value) {
+                        onFieldSubmitted();
+                      },
+                    );
+                  },
+                  onSelected: (String? selection) {
+                    setDialogState(() => planEntryId = selection);
+                  },
+                  optionsMaxHeight: 200,
                 ),
               ],
               const SizedBox(height: 12),

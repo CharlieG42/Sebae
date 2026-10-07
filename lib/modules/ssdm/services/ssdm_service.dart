@@ -323,24 +323,36 @@ class SsdmService extends ChangeNotifier {
     return null;
   }
 
-  /// Libellé complet d'une ligne de plan : "Titre - IV - groupe - type".
+  /// Libellé complet d'une ligne de plan : "trigramme_iv - nom_sales_plan".
   String planLineLabel(String planEntryId) {
     final e = planEntryOf(planEntryId);
     if (e == null) return '?';
-    final titlePart = e.title.isNotEmpty ? '${e.title} - ' : '';
-    return '$titlePart${ivLabel(e.ivId)} - ${groupLabel(e.clientGroupId)} - '
-        '${typeLabel(e.clientTypeId)}';
+    
+    // Obtenir les trigrammes des IVs concernés
+    final ivTrigrams = e.effectiveIvIds
+        .map((id) => ivOf(id)?.trigramOrEmpty ?? ivLabel(id))
+        .where((t) => t.isNotEmpty)
+        .join(', ');
+    
+    final ivPart = ivTrigrams.isNotEmpty ? ivTrigrams : ivLabel(e.ivId);
+    final namePart = e.title.isNotEmpty ? e.title : 'Ligne sans nom';
+    
+    return '$ivPart - $namePart';
   }
 
   /// Libellé court d'une ligne de plan (pour les axes du radar).
   String planLineShortLabel(String planEntryId) {
     final e = planEntryOf(planEntryId);
     if (e == null) return '?';
+    
+    // Obtenir le trigramme du premier IV
     final iv = ivOf(e.ivId);
     final ivPart = (iv?.trigramOrEmpty.isNotEmpty ?? false)
         ? iv!.trigramOrEmpty
         : (iv?.name ?? 'Tous');
-    return '$ivPart - ${groupLabel(e.clientGroupId)}';
+    
+    final namePart = e.title.isNotEmpty ? e.title : 'Ligne sans nom';
+    return '$ivPart - $namePart';
   }
 
   /// Total du Sales Plan par IV pour une année.

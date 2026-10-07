@@ -167,6 +167,7 @@ class DatabaseService {
     final int id = _generateNewId(_getPompesBox().keys);
     final pompeToInsert = pompe.copyWith(id: id);
     await _getPompesBox().put(id, pompeToInsert);
+    await _updateSystemeInvestissementTotal(pompe.systemeId);
     return id;
   }
 
@@ -185,12 +186,31 @@ class DatabaseService {
   Future<int> updatePompe(Pompe pompe) async {
     if (pompe.id == null) return 0;
     await _getPompesBox().put(pompe.id, pompe);
+    await _updateSystemeInvestissementTotal(pompe.systemeId);
     return 1;
   }
 
   Future<int> deletePompe(int id) async {
-    await _getPompesBox().delete(id);
+    final pompe = await getPompeById(id);
+    if (pompe != null) {
+      await _getPompesBox().delete(id);
+      await _updateSystemeInvestissementTotal(pompe.systemeId);
+    }
     return 1;
+  }
+
+  // Recalcule et met à jour le coutInvestissementTotal pour un système donné
+  Future<void> _updateSystemeInvestissementTotal(int systemeId) async {
+    final pompes = await getPompesBySystemeId(systemeId);
+    final total = pompes.fold(0.0, (sum, pompe) => sum + pompe.coutInvestissement);
+    
+    final systemes = _getSystemesBox().values.where((s) => s.id == systemeId).toList();
+    if (systemes.isNotEmpty) {
+      final systeme = systemes.first;
+      if (systeme.coutInvestissementTotal != total) {
+        await _getSystemesBox().put(systemeId, systeme.copyWith(coutInvestissementTotal: total));
+      }
+    }
   }
 
   // ====================
@@ -218,6 +238,7 @@ class DatabaseService {
     for (final pompe in pompesToDelete) {
       await _getPompesBox().delete(pompe.id);
     }
+    await _updateSystemeInvestissementTotal(systemeId);
     return pompesToDelete.length;
   }
 

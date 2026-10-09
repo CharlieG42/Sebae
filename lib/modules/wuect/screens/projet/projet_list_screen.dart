@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 import '../../models/projet.dart';
 import '../../../../shared/models/contact.dart';
 import '../../../../shared/models/iv.dart';
@@ -97,6 +98,11 @@ class _ProjetListScreenState extends State<ProjetListScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadData,
+          ),
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Quitter',
+            onPressed: () => windowManager.close(),
           ),
         ],
       ),

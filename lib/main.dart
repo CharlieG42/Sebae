@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await HiveService.init();
+  await HiveService.autoBackupOnLaunch();
 
   // Migration des données WUECT standalone (ancien dossier de données)
   // vers les boxes de Sebae. Exécutée une seule fois, non bloquante.

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 import '../../models/pompe.dart';
 import '../../services/database_service.dart';
 import '../../utils/decimal_input_formatter.dart';
@@ -194,14 +195,18 @@ class _PompeFormScreenState extends State<PompeFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isNew ? 'Créer une Pompe' : 'Modifier la Pompe'),
-        actions: _isNew
-            ? null
-            : [
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _showDeleteConfirmation(),
-                ),
-              ],
+        actions: [
+          if (!_isNew)
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () => _showDeleteConfirmation(),
+            ),
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Quitter',
+            onPressed: () => windowManager.close(),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

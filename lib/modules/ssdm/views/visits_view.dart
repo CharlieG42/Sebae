@@ -111,7 +111,7 @@ class _VisitFiltersState extends State<_VisitFilters> {
   String? _selectedClientId;
   String? _selectedIvId;
   VisitStatus? _selectedStatus;
-  
+
   final _clientFilterController = TextEditingController();
   final _ivFilterController = TextEditingController();
   final _statusFilterController = TextEditingController();
@@ -126,17 +126,17 @@ class _VisitFiltersState extends State<_VisitFilters> {
       }
     });
   }
-  
+
   void _updateControllers(BuildContext context) {
     final service = context.read<SsdmService>();
-    _clientFilterController.text = _selectedClientId != null 
-        ? service.clientLabel(_selectedClientId!) 
+    _clientFilterController.text = _selectedClientId != null
+        ? service.clientLabel(_selectedClientId!)
         : '';
-    _ivFilterController.text = _selectedIvId != null 
-        ? service.ivLabel(_selectedIvId!) 
+    _ivFilterController.text = _selectedIvId != null
+        ? service.ivLabel(_selectedIvId!)
         : '';
-    _statusFilterController.text = _selectedStatus != null 
-        ? _selectedStatus!.label 
+    _statusFilterController.text = _selectedStatus != null
+        ? _selectedStatus!.label
         : '';
   }
 
@@ -166,9 +166,11 @@ class _VisitFiltersState extends State<_VisitFilters> {
                         return ['', ...service.clients.map((c) => c.id)];
                       }
                       return service.clients
-                          .where((c) => c.displayName
-                              .toLowerCase()
-                              .contains(textEditingValue.text.toLowerCase()))
+                          .where(
+                            (c) => c.displayName.toLowerCase().contains(
+                              textEditingValue.text.toLowerCase(),
+                            ),
+                          )
                           .map((c) => c.id)
                           .toList();
                     },
@@ -176,28 +178,33 @@ class _VisitFiltersState extends State<_VisitFilters> {
                       if (option.isEmpty) return 'Tous les clients';
                       return service.clientLabel(option);
                     },
-                    fieldViewBuilder: (
-                      BuildContext context,
-                      TextEditingController fieldTextEditingController,
-                      FocusNode fieldFocusNode,
-                      VoidCallback onFieldSubmitted,
-                    ) {
-                      fieldTextEditingController.text = _clientFilterController.text;
-                      return TextFormField(
-                        controller: _clientFilterController,
-                        focusNode: fieldFocusNode,
-                        decoration: const InputDecoration(
-                          labelText: 'Client',
-                          border: OutlineInputBorder(),
-                        ),
-                        onFieldSubmitted: (String value) => onFieldSubmitted(),
-                      );
-                    },
+                    fieldViewBuilder:
+                        (
+                          BuildContext context,
+                          TextEditingController fieldTextEditingController,
+                          FocusNode fieldFocusNode,
+                          VoidCallback onFieldSubmitted,
+                        ) {
+                          fieldTextEditingController.text =
+                              _clientFilterController.text;
+                          return TextFormField(
+                            controller: _clientFilterController,
+                            focusNode: fieldFocusNode,
+                            decoration: const InputDecoration(
+                              labelText: 'Client',
+                              border: OutlineInputBorder(),
+                            ),
+                            onFieldSubmitted: (String value) =>
+                                onFieldSubmitted(),
+                          );
+                        },
                     onSelected: (String selection) {
                       setState(() {
-                        _selectedClientId = selection.isEmpty ? null : selection;
-                        _clientFilterController.text = selection.isEmpty 
-                            ? '' 
+                        _selectedClientId = selection.isEmpty
+                            ? null
+                            : selection;
+                        _clientFilterController.text = selection.isEmpty
+                            ? ''
                             : service.clientLabel(selection);
                       });
                     },
@@ -212,10 +219,12 @@ class _VisitFiltersState extends State<_VisitFilters> {
                         return ['', ...service.ivs.map((iv) => iv.id)];
                       }
                       return service.ivs
-                          .where((iv) => service
-                              .ivLabel(iv.id)
-                              .toLowerCase()
-                              .contains(textEditingValue.text.toLowerCase()))
+                          .where(
+                            (iv) => service
+                                .ivLabel(iv.id)
+                                .toLowerCase()
+                                .contains(textEditingValue.text.toLowerCase()),
+                          )
                           .map((iv) => iv.id)
                           .toList();
                     },
@@ -223,28 +232,31 @@ class _VisitFiltersState extends State<_VisitFilters> {
                       if (option.isEmpty) return 'Tous les IV';
                       return service.ivLabel(option);
                     },
-                    fieldViewBuilder: (
-                      BuildContext context,
-                      TextEditingController fieldTextEditingController,
-                      FocusNode fieldFocusNode,
-                      VoidCallback onFieldSubmitted,
-                    ) {
-                      fieldTextEditingController.text = _ivFilterController.text;
-                      return TextFormField(
-                        controller: _ivFilterController,
-                        focusNode: fieldFocusNode,
-                        decoration: const InputDecoration(
-                          labelText: 'IV',
-                          border: OutlineInputBorder(),
-                        ),
-                        onFieldSubmitted: (String value) => onFieldSubmitted(),
-                      );
-                    },
+                    fieldViewBuilder:
+                        (
+                          BuildContext context,
+                          TextEditingController fieldTextEditingController,
+                          FocusNode fieldFocusNode,
+                          VoidCallback onFieldSubmitted,
+                        ) {
+                          fieldTextEditingController.text =
+                              _ivFilterController.text;
+                          return TextFormField(
+                            controller: _ivFilterController,
+                            focusNode: fieldFocusNode,
+                            decoration: const InputDecoration(
+                              labelText: 'IV',
+                              border: OutlineInputBorder(),
+                            ),
+                            onFieldSubmitted: (String value) =>
+                                onFieldSubmitted(),
+                          );
+                        },
                     onSelected: (String selection) {
                       setState(() {
                         _selectedIvId = selection.isEmpty ? null : selection;
-                        _ivFilterController.text = selection.isEmpty 
-                            ? '' 
+                        _ivFilterController.text = selection.isEmpty
+                            ? ''
                             : service.ivLabel(selection);
                       });
                     },
@@ -259,37 +271,42 @@ class _VisitFiltersState extends State<_VisitFilters> {
                         return ['', ...VisitStatus.values.map((s) => s.name)];
                       }
                       return VisitStatus.values
-                          .where((s) => s.label
-                              .toLowerCase()
-                              .contains(textEditingValue.text.toLowerCase()))
+                          .where(
+                            (s) => s.label.toLowerCase().contains(
+                              textEditingValue.text.toLowerCase(),
+                            ),
+                          )
                           .map((s) => s.name)
                           .toList();
                     },
                     displayStringForOption: (String option) {
                       if (option.isEmpty) return 'Tous les statuts';
                       final status = VisitStatus.values.firstWhere(
-                            (s) => s.name == option,
-                            orElse: () => VisitStatus.planned,
-                          );
+                        (s) => s.name == option,
+                        orElse: () => VisitStatus.planned,
+                      );
                       return status.label;
                     },
-                    fieldViewBuilder: (
-                      BuildContext context,
-                      TextEditingController fieldTextEditingController,
-                      FocusNode fieldFocusNode,
-                      VoidCallback onFieldSubmitted,
-                    ) {
-                      fieldTextEditingController.text = _statusFilterController.text;
-                      return TextFormField(
-                        controller: _statusFilterController,
-                        focusNode: fieldFocusNode,
-                        decoration: const InputDecoration(
-                          labelText: 'Statut',
-                          border: OutlineInputBorder(),
-                        ),
-                        onFieldSubmitted: (String value) => onFieldSubmitted(),
-                      );
-                    },
+                    fieldViewBuilder:
+                        (
+                          BuildContext context,
+                          TextEditingController fieldTextEditingController,
+                          FocusNode fieldFocusNode,
+                          VoidCallback onFieldSubmitted,
+                        ) {
+                          fieldTextEditingController.text =
+                              _statusFilterController.text;
+                          return TextFormField(
+                            controller: _statusFilterController,
+                            focusNode: fieldFocusNode,
+                            decoration: const InputDecoration(
+                              labelText: 'Statut',
+                              border: OutlineInputBorder(),
+                            ),
+                            onFieldSubmitted: (String value) =>
+                                onFieldSubmitted(),
+                          );
+                        },
                     onSelected: (String selection) {
                       if (selection.isEmpty) {
                         setState(() {
@@ -633,6 +650,7 @@ Future<void> showVisitDialog(
     if (visit == null) {
       await service.addVisit(
         clientId: result.clientId,
+        contactId: result.contactId,
         ivIds: result.ivIds,
         planEntryId: result.planEntryId,
         actionId: result.actionId,
@@ -652,6 +670,7 @@ Future<void> showVisitDialog(
       );
     } else {
       visit.clientId = result.clientId;
+      visit.contactId = result.contactId;
       visit.ivIds = result.ivIds;
       visit.planEntryIds = result.planEntryIds;
       visit.actionIds = result.actionIds;
@@ -868,8 +887,10 @@ Future<List<String>?> _showPlanEntryMultiSelectDialog(
                   children: [
                     for (final e in service.planFor(year))
                       if (searchController.text.isEmpty ||
-                          service.planLineLabel(e.id).toLowerCase().contains(
-                                searchController.text.toLowerCase()))
+                          service
+                              .planLineLabel(e.id)
+                              .toLowerCase()
+                              .contains(searchController.text.toLowerCase()))
                         CheckboxListTile(
                           value: selectedSet.contains(e.id),
                           title: Text(service.planLineLabel(e.id)),
@@ -926,20 +947,25 @@ Widget _buildActionSelectionDisplay(
     children: actionIds
         .map(
           (id) => Chip(
-            label: Text(service.actionsFor(year).firstWhere(
-                  (a) => a.id == id,
-                  orElse: () => SalesAction(
-                        id: '',
-                        year: 0,
-                        title: 'Action inconnue',
-                        description: '',
-                        ivIds: [],
-                        statusIndex: 0,
-                        progress: 0,
-                        createdAt: DateTime.now(),
-                        history: [],
-                      ),
-                ).title),
+            label: Text(
+              service
+                  .actionsFor(year)
+                  .firstWhere(
+                    (a) => a.id == id,
+                    orElse: () => SalesAction(
+                      id: '',
+                      year: 0,
+                      title: 'Action inconnue',
+                      description: '',
+                      ivIds: [],
+                      statusIndex: 0,
+                      progress: 0,
+                      createdAt: DateTime.now(),
+                      history: [],
+                    ),
+                  )
+                  .title,
+            ),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         )
@@ -986,7 +1012,8 @@ Future<List<String>?> _showActionMultiSelectDialog(
                     for (final a in service.actionsFor(year))
                       if (searchController.text.isEmpty ||
                           a.title.toLowerCase().contains(
-                                searchController.text.toLowerCase()))
+                            searchController.text.toLowerCase(),
+                          ))
                         CheckboxListTile(
                           value: selectedSet.contains(a.id),
                           title: Text(a.title),
@@ -1155,6 +1182,7 @@ Future<List<String>?> _showIvMultiSelectDialogForVisits(
 
 class _VisitDialogState extends State<_VisitDialog> {
   late String _clientId;
+  late String? _contactId;
   late List<String>? _ivIds;
   late List<String>? _planEntryIds;
   late List<String>? _actionIds;
@@ -1181,7 +1209,7 @@ class _VisitDialogState extends State<_VisitDialog> {
   final _notesBeforeController = TextEditingController();
   final _notesDuringController = TextEditingController();
   final _notesAfterController = TextEditingController();
-  
+
   // Controller pour le champ Client (sélection unique)
   final _clientController = TextEditingController();
 
@@ -1190,24 +1218,31 @@ class _VisitDialogState extends State<_VisitDialog> {
     super.initState();
     final v = widget.visit;
     _clientId = v?.clientId ?? widget.presetClientId ?? '';
+    _contactId = v?.contactId;
     _ivIds = v?.ivIds ?? [];
-    _planEntryIds = v?.planEntryIds ?? (widget.presetPlanEntryId != null ? [widget.presetPlanEntryId!] : []);
-    _actionIds = v?.actionIds ?? (widget.presetActionId != null ? [widget.presetActionId!] : []);
+    _planEntryIds =
+        v?.planEntryIds ??
+        (widget.presetPlanEntryId != null ? [widget.presetPlanEntryId!] : []);
+    _actionIds =
+        v?.actionIds ??
+        (widget.presetActionId != null ? [widget.presetActionId!] : []);
     _title = v?.title ?? '';
     _appointmentDate = v?.appointmentDate ?? DateTime.now();
     _estimatedDuration = v?.estimatedDuration ?? 60;
     _location = v?.location ?? '';
-    
+
     // Initialiser les controllers Autocomplete
-    _clientController.text = _clientId.isNotEmpty 
-        ? widget.service.clientLabel(_clientId) 
+    _clientController.text = _clientId.isNotEmpty
+        ? widget.service.clientLabel(_clientId)
         : '';
     // Les controllers pour planEntryIds et actionIds ne sont plus nécessaires
     // car ce sont maintenant des sélections multiples avec dialogues
     _productRangeIds = v?.productRangeIds ?? [];
     _documentPaths = v?.documentPaths ?? [];
     _visitFrameId = v?.visitFrameId;
-    _followUpTaskObjects = (v?.followUpTasks ?? []).map((task) => _FollowUpTask.fromStorageString(task)).toList();
+    _followUpTaskObjects = (v?.followUpTasks ?? [])
+        .map((task) => _FollowUpTask.fromStorageString(task))
+        .toList();
     _notesBefore = v?.notesBefore ?? '';
     _notesDuring = v?.notesDuring ?? '';
     _notesAfter = v?.notesAfter ?? '';
@@ -1250,48 +1285,72 @@ class _VisitDialogState extends State<_VisitDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Client
-              Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
-                    return service.clients.map((c) => c.id).toList();
-                  }
-                  return service.clients
-                      .where((c) => c.displayName
-                          .toLowerCase()
-                          .contains(textEditingValue.text.toLowerCase()))
-                      .map((c) => c.id)
-                      .toList();
-                },
-                displayStringForOption: (String option) {
-                  return service.clientLabel(option);
-                },
-                fieldViewBuilder: (
-                  BuildContext context,
-                  TextEditingController fieldTextEditingController,
-                  FocusNode fieldFocusNode,
-                  VoidCallback onFieldSubmitted,
-                ) {
-                  // Utiliser notre controller dédié
-                  fieldTextEditingController.text = _clientController.text;
-                  return TextFormField(
-                    controller: _clientController,
-                    focusNode: fieldFocusNode,
-                    decoration: const InputDecoration(
-                      labelText: 'Client *',
-                      border: OutlineInputBorder(),
+              // Client (base partagée)
+              DropdownButtonFormField<String>(
+                value: _clientId.isEmpty ? null : _clientId,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Client *',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: '',
+                    child: Text('Sélectionner un client'),
+                  ),
+                  for (final client in service.clients)
+                    DropdownMenuItem<String>(
+                      value: client.id,
+                      child: Text(client.displayName),
                     ),
-                    onFieldSubmitted: (String value) => onFieldSubmitted(),
-                    validator: (v) => v == null || v.isEmpty ? 'Client obligatoire' : null,
-                  );
-                },
-                onSelected: (String selection) {
+                ],
+                onChanged: (value) {
                   setState(() {
-                    _clientId = selection;
-                    _clientController.text = service.clientLabel(selection);
+                    _clientId = value ?? '';
+                    if (_clientId.isEmpty) {
+                      _contactId = null;
+                      return;
+                    }
+                    if (_contactId != null &&
+                        service.contactOf(_contactId)?.clientId != _clientId) {
+                      _contactId = null;
+                    }
                   });
                 },
-                optionsMaxHeight: 200,
+              ),
+              const SizedBox(height: 12),
+
+              // Contact (base partagée)
+              DropdownButtonFormField<String?>(
+                value: _contactId,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Contact',
+                  border: OutlineInputBorder(),
+                ),
+                items: _clientId.isEmpty
+                    ? const [
+                        DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Sélectionnez d’abord un client'),
+                        ),
+                      ]
+                    : [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Aucun contact'),
+                        ),
+                        for (final contact in service.contacts.where(
+                          (c) => c.clientId == _clientId,
+                        ))
+                          DropdownMenuItem<String?>(
+                            value: contact.id,
+                            child: Text(contact.displayName),
+                          ),
+                      ],
+                onChanged: _clientId.isEmpty
+                    ? null
+                    : (value) => setState(() => _contactId = value),
               ),
               const SizedBox(height: 12),
 
@@ -1338,7 +1397,10 @@ class _VisitDialogState extends State<_VisitDialog> {
                     border: OutlineInputBorder(),
                     suffixIcon: Icon(Icons.expand_more),
                   ),
-                  child: _buildPlanEntrySelectionDisplay(_planEntryIds, service),
+                  child: _buildPlanEntrySelectionDisplay(
+                    _planEntryIds,
+                    service,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1362,7 +1424,11 @@ class _VisitDialogState extends State<_VisitDialog> {
                     border: OutlineInputBorder(),
                     suffixIcon: Icon(Icons.expand_more),
                   ),
-                  child: _buildActionSelectionDisplay(_actionIds, service, service.selectedYear!),
+                  child: _buildActionSelectionDisplay(
+                    _actionIds,
+                    service,
+                    service.selectedYear!,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1640,14 +1706,20 @@ class _VisitDialogState extends State<_VisitDialog> {
                               label: Text(task.text),
                               selected: task.isCompleted,
                               onSelected: (selected) => setState(() {
-                                final index = _followUpTaskObjects.indexOf(task);
+                                final index = _followUpTaskObjects.indexOf(
+                                  task,
+                                );
                                 _followUpTaskObjects[index] = _FollowUpTask(
                                   text: task.text,
                                   isCompleted: !task.isCompleted,
                                 );
                               }),
-                              avatar: task.isCompleted 
-                                  ? const Icon(Icons.check, size: 16, color: Colors.green)
+                              avatar: task.isCompleted
+                                  ? const Icon(
+                                      Icons.check,
+                                      size: 16,
+                                      color: Colors.green,
+                                    )
                                   : null,
                               deleteIcon: const Icon(Icons.close, size: 16),
                               onDeleted: () => setState(() {
@@ -1741,7 +1813,10 @@ class _VisitDialogState extends State<_VisitDialog> {
     final task = _followUpTaskController.text.trim();
     if (task.isEmpty) return;
     setState(() {
-      _followUpTaskObjects = [..._followUpTaskObjects, _FollowUpTask(text: task)];
+      _followUpTaskObjects = [
+        ..._followUpTaskObjects,
+        _FollowUpTask(text: task),
+      ];
       _followUpTaskController.clear();
     });
   }
@@ -1759,6 +1834,7 @@ class _VisitDialogState extends State<_VisitDialog> {
         id: widget.visit?.id ?? '',
         year: widget.visit?.year ?? 0,
         clientId: _clientId,
+        contactId: _contactId,
         ivIds: _ivIds,
         planEntryIds: _planEntryIds,
         actionIds: _actionIds,
@@ -1769,7 +1845,9 @@ class _VisitDialogState extends State<_VisitDialog> {
         productRangeIds: _productRangeIds,
         documentPaths: _documentPaths,
         visitFrameId: _visitFrameId,
-        followUpTasks: _followUpTaskObjects.map((task) => task.toStorageString()).toList(),
+        followUpTasks: _followUpTaskObjects
+            .map((task) => task.toStorageString())
+            .toList(),
         themes: const [],
         notesBefore: _notesBefore,
         notesDuring: _notesDuring,

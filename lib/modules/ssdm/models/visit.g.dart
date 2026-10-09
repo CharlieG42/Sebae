@@ -20,6 +20,7 @@ class VisitAdapter extends TypeAdapter<Visit> {
       id: fields[0] as String,
       year: fields[1] as int,
       clientId: fields[2] as String,
+      contactId: fields[21] as String?,
       ivIds: (fields[3] as List?)?.cast<String>(),
       planEntryIds: (fields[4] as List?)?.cast<String>(),
       actionIds: (fields[5] as List?)?.cast<String>(),
@@ -44,7 +45,7 @@ class VisitAdapter extends TypeAdapter<Visit> {
   @override
   void write(BinaryWriter writer, Visit obj) {
     writer
-      ..writeByte(21)
+      ..writeByte(22)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -86,7 +87,9 @@ class VisitAdapter extends TypeAdapter<Visit> {
       ..writeByte(19)
       ..write(obj.visitFrameId)
       ..writeByte(20)
-      ..write(obj.followUpTasks);
+      ..write(obj.followUpTasks)
+      ..writeByte(21)
+      ..write(obj.contactId);
   }
 
   @override

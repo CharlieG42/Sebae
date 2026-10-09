@@ -21,13 +21,20 @@ class SystemeAdapter extends TypeAdapter<Systeme> {
       projetId: fields[1] as int,
       nom: fields[2] as String,
       coutInvestissementTotal: fields[3] as double,
+      aides:
+          (fields[4] as List<dynamic>?)?.map((e) {
+            if (e is Aide) return e;
+            if (e is Map) return Aide.fromMap(Map<String, dynamic>.from(e));
+            return Aide();
+          }).toList() ??
+          const [],
     );
   }
 
   @override
   void write(BinaryWriter writer, Systeme obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -35,7 +42,9 @@ class SystemeAdapter extends TypeAdapter<Systeme> {
       ..writeByte(2)
       ..write(obj.nom)
       ..writeByte(3)
-      ..write(obj.coutInvestissementTotal);
+      ..write(obj.coutInvestissementTotal)
+      ..writeByte(4)
+      ..write(obj.aides);
   }
 
   @override

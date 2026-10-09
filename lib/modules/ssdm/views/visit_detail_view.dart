@@ -24,6 +24,8 @@ class VisitDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     final service = context.watch<SsdmService>();
     final visit = service.visitOf(visitId);
+    final followUpTasks =
+        visit?.followUpTaskEntries ?? const <VisitFollowUpTask>[];
 
     if (visit == null) {
       return Scaffold(
@@ -108,6 +110,12 @@ class VisitDetailView extends StatelessWidget {
                   title: Text(service.clientLabel(visit.clientId)),
                   subtitle: const Text('Nom du client'),
                 ),
+                if (visit.contactId != null && visit.contactId!.isNotEmpty)
+                  ListTile(
+                    leading: const Icon(Icons.contact_mail_outlined),
+                    title: Text(service.contactLabel(visit.contactId)),
+                    subtitle: const Text('Contact associé'),
+                  ),
               ],
             ),
             const SizedBox(height: 12),
@@ -276,30 +284,6 @@ class VisitDetailView extends StatelessWidget {
                           content: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (visit.hasFollowUpTasks)
-                                ...visit.pendingFollowUpTasks.map(
-                                  (task) => ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    leading: const Icon(
-                                      Icons.check_circle_outline,
-                                      color: Colors.green,
-                                    ),
-                                    title: Text(task),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.close),
-                                      tooltip: 'Supprimer la tâche',
-                                      onPressed: () => _removeFollowUpTask(
-                                        context,
-                                        visit,
-                                        task,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              else
-                                const Text(
-                                  'Aucune tâche de suivi n’a été créée pour cette visite.',
-                                ),
                               const SizedBox(height: 8),
                               if (visit.notesAfter.isNotEmpty)
                                 _DetailCard(
@@ -332,6 +316,106 @@ class VisitDetailView extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+
+            // Tâches de suivi (bloc dédié visible comme les autres sections)
+            _DetailCard(
+              icon: Icons.task_alt,
+              title: 'Tâches de suivi',
+              children: [
+                if (followUpTasks.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text('Aucune tâche de suivi pour cette visite.'),
+                  )
+                else
+                  ...followUpTasks.map((task) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Icon(
+                                  task.status == FollowUpTaskStatus.done
+                                      ? Icons.check_circle_outline
+                                      : task.status ==
+                                            FollowUpTaskStatus.abandoned
+                                      ? Icons.cancel_outlined
+                                      : task.status ==
+                                            FollowUpTaskStatus.inProgress
+                                      ? Icons.autorenew
+                                      : Icons.pending_actions,
+                                  color: task.status == FollowUpTaskStatus.done
+                                      ? Colors.green
+                                      : task.status ==
+                                            FollowUpTaskStatus.abandoned
+                                      ? Colors.red
+                                      : task.status ==
+                                            FollowUpTaskStatus.inProgress
+                                      ? Colors.orange
+                                      : Colors.blue,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(child: Text(task.text)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 170,
+                            child: DropdownButtonFormField<FollowUpTaskStatus>(
+                              value: task.status,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
+                                border: OutlineInputBorder(),
+                              ),
+                              items: FollowUpTaskStatus.values
+                                  .map(
+                                    (status) => DropdownMenuItem(
+                                      value: status,
+                                      child: Text(status.label),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (newStatus) async {
+                                if (newStatus == null) return;
+                                await _updateFollowUpTaskStatus(
+                                  context,
+                                  visit,
+                                  task.text,
+                                  newStatus,
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            tooltip: 'Supprimer la tâche',
+                            onPressed: () =>
+                                _removeFollowUpTask(context, visit, task.text),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showAddFollowUpTaskDialog(context, visit),
+                    icon: const Icon(Icons.add_task),
+                    label: const Text('Ajouter une tâche'),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
 
@@ -540,24 +624,73 @@ class VisitDetailView extends StatelessWidget {
     }
   }
 
+  Future<void> _updateFollowUpTaskStatus(
+    BuildContext context,
+    Visit visit,
+    String taskText,
+    FollowUpTaskStatus status,
+  ) async {
+    final service = context.read<SsdmService>();
+    final tasks = visit.followUpTaskEntries.map((task) {
+      if (task.text == taskText) {
+        return VisitFollowUpTask(text: task.text, status: status);
+      }
+      return task;
+    }).toList();
+
+    visit.followUpTasks = tasks.map((task) => task.toStoredString()).toList();
+    await service.updateVisit(visit);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tâche mise à jour : ${status.label}')),
+      );
+    }
+  }
+
   Future<void> _showAddFollowUpTaskDialog(
     BuildContext context,
     Visit visit,
   ) async {
     final service = context.read<SsdmService>();
     final controller = TextEditingController();
+    var selectedStatus = FollowUpTaskStatus.waiting;
     final taskText = await showDialog<String?>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Ajouter une tâche de suivi'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Tâche à réaliser après le RDV',
-            hintText: 'Relancer le client, envoyer le devis, etc.',
-            border: OutlineInputBorder(),
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Tâche à réaliser après le RDV',
+                hintText: 'Relancer le client, envoyer le devis, etc.',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<FollowUpTaskStatus>(
+              value: selectedStatus,
+              decoration: const InputDecoration(
+                labelText: 'État initial',
+                border: OutlineInputBorder(),
+              ),
+              items: FollowUpTaskStatus.values
+                  .map(
+                    (status) => DropdownMenuItem(
+                      value: status,
+                      child: Text(status.label),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) selectedStatus = value;
+              },
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -573,10 +706,15 @@ class VisitDetailView extends StatelessWidget {
     );
 
     if (taskText != null && taskText.isNotEmpty && context.mounted) {
-      final tasks = (visit.followUpTasks ?? []).toList();
-      if (!tasks.contains(taskText)) {
-        tasks.add(taskText);
-        visit.followUpTasks = tasks;
+      final normalizedTask = Visit.normalizeFollowUpTaskText(taskText);
+      final tasks = visit.followUpTaskEntries.toList();
+      if (!tasks.any((task) => task.text == normalizedTask)) {
+        tasks.add(
+          VisitFollowUpTask(text: normalizedTask, status: selectedStatus),
+        );
+        visit.followUpTasks = tasks
+            .map((task) => task.toStoredString())
+            .toList();
         await service.updateVisit(visit);
       }
       if (context.mounted) {
@@ -593,10 +731,11 @@ class VisitDetailView extends StatelessWidget {
     String task,
   ) async {
     final service = context.read<SsdmService>();
-    final tasks = (visit.followUpTasks ?? [])
-        .where((item) => item != task)
+    final taskText = Visit.normalizeFollowUpTaskText(task);
+    final tasks = visit.followUpTaskEntries
+        .where((item) => item.text != taskText)
         .toList();
-    visit.followUpTasks = tasks;
+    visit.followUpTasks = tasks.map((item) => item.toStoredString()).toList();
     await service.updateVisit(visit);
     if (context.mounted) {
       ScaffoldMessenger.of(

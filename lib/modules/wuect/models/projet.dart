@@ -63,30 +63,37 @@ class Projet {
       coutEnergie: (map['coutEnergie'] ?? 0.0).toDouble(),
       pourcentageAugmentationEnergie:
           (map['pourcentageAugmentationEnergie'] ?? 0.0).toDouble(),
-      percentagePerteRendement:
-          (map['percentagePerteRendement'] ?? 0.0).toDouble(),
+      percentagePerteRendement: (map['percentagePerteRendement'] ?? 0.0)
+          .toDouble(),
     );
   }
 
   Projet copyWith({
-    int? id,
-    String? nomSite,
-    String? contactId,
-    String? ivId,
-    double? coutEnergie,
-    double? pourcentageAugmentationEnergie,
-    double? percentagePerteRendement,
+    Object? id = _sentinel,
+    Object? nomSite = _sentinel,
+    Object? contactId = _sentinel,
+    Object? ivId = _sentinel,
+    Object? coutEnergie = _sentinel,
+    Object? pourcentageAugmentationEnergie = _sentinel,
+    Object? percentagePerteRendement = _sentinel,
   }) {
     return Projet(
-      id: id ?? this.id,
-      nomSite: nomSite ?? this.nomSite,
-      contactId: contactId ?? this.contactId,
-      ivId: ivId ?? this.ivId,
-      coutEnergie: coutEnergie ?? this.coutEnergie,
+      id: id == _sentinel ? this.id : id as int?,
+      nomSite: nomSite == _sentinel ? this.nomSite : nomSite as String,
+      contactId: contactId == _sentinel ? this.contactId : contactId as String,
+      ivId: ivId == _sentinel ? this.ivId : ivId as String?,
+      coutEnergie: coutEnergie == _sentinel
+          ? this.coutEnergie
+          : coutEnergie as double,
       pourcentageAugmentationEnergie:
-          pourcentageAugmentationEnergie ?? this.pourcentageAugmentationEnergie,
-      percentagePerteRendement:
-          percentagePerteRendement ?? this.percentagePerteRendement,
+          pourcentageAugmentationEnergie == _sentinel
+          ? this.pourcentageAugmentationEnergie
+          : pourcentageAugmentationEnergie as double,
+      percentagePerteRendement: percentagePerteRendement == _sentinel
+          ? this.percentagePerteRendement
+          : percentagePerteRendement as double,
     );
   }
 }
+
+const Object _sentinel = Object();

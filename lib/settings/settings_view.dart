@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../core/storage/hive_service.dart';
 
@@ -9,7 +10,16 @@ class SettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Paramètres')),
+      appBar: AppBar(
+        title: const Text('Paramètres'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Quitter',
+            onPressed: () => windowManager.close(),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -37,6 +47,39 @@ class SettingsView extends StatelessWidget {
                 subtitle: Text(snapshot.data ?? 'Non disponible'),
               );
             },
+          ),
+          ListTile(
+            leading: Icon(Icons.backup_outlined),
+            title: Text('Sauvegarde automatique'),
+            subtitle: Text(HiveService.defaultBackupPath),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: FilledButton.icon(
+              icon: const Icon(Icons.restore_rounded),
+              label: const Text('Réimporter la dernière sauvegarde'),
+              onPressed: () async {
+                try {
+                  await HiveService.restoreLatestBackup(overwrite: true);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Sauvegarde restaurée. Les données ont été réimportées.',
+                      ),
+                    ),
+                  );
+                } catch (error) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Restauration impossible: $error'),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+                }
+              },
+            ),
           ),
           ListTile(
             leading: Icon(Icons.extension_outlined),

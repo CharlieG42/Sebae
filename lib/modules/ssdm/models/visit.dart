@@ -17,6 +17,75 @@ enum VisitStatus {
   final String label;
 }
 
+enum FollowUpTaskStatus {
+  waiting('En attente'),
+  inProgress('En cours'),
+  done('Terminée'),
+  abandoned('Abandonnée');
+
+  const FollowUpTaskStatus(this.label);
+  final String label;
+
+  static FollowUpTaskStatus fromStored(String value) {
+    final normalized = value.trim();
+    if (normalized.startsWith('[WAITING]')) return FollowUpTaskStatus.waiting;
+    if (normalized.startsWith('[IN_PROGRESS]')) {
+      return FollowUpTaskStatus.inProgress;
+    }
+    if (normalized.startsWith('[DONE]')) return FollowUpTaskStatus.done;
+    if (normalized.startsWith('[ABANDONED]')) {
+      return FollowUpTaskStatus.abandoned;
+    }
+    return FollowUpTaskStatus.waiting;
+  }
+
+  String toStoredToken() {
+    switch (this) {
+      case FollowUpTaskStatus.waiting:
+        return 'WAITING';
+      case FollowUpTaskStatus.inProgress:
+        return 'IN_PROGRESS';
+      case FollowUpTaskStatus.done:
+        return 'DONE';
+      case FollowUpTaskStatus.abandoned:
+        return 'ABANDONED';
+    }
+  }
+}
+
+class VisitFollowUpTask {
+  final String text;
+  final FollowUpTaskStatus status;
+
+  const VisitFollowUpTask({
+    required this.text,
+    this.status = FollowUpTaskStatus.waiting,
+  });
+
+  String toStoredString() => '[${status.toStoredToken()}] $text';
+
+  static VisitFollowUpTask fromStored(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) {
+      return const VisitFollowUpTask(text: '');
+    }
+
+    final status = FollowUpTaskStatus.fromStored(raw);
+    final token = switch (status) {
+      FollowUpTaskStatus.waiting => '[WAITING]',
+      FollowUpTaskStatus.inProgress => '[IN_PROGRESS]',
+      FollowUpTaskStatus.done => '[DONE]',
+      FollowUpTaskStatus.abandoned => '[ABANDONED]',
+    };
+
+    final text = raw.startsWith(token)
+        ? raw.substring(token.length).trim()
+        : raw;
+
+    return VisitFollowUpTask(text: text.trim(), status: status);
+  }
+}
+
 /// Visite client.
 ///
 /// Une visite peut être rattachée à :
@@ -36,6 +105,10 @@ class Visit extends HiveObject {
   /// ID du client (référence vers shared_clients).
   @HiveField(2)
   String clientId;
+
+  /// ID du contact principal (référence vers shared_contacts), optionnel.
+  @HiveField(21)
+  String? contactId;
 
   /// IDs des IV participants (référence vers shared_ivs).
   /// Peut contenir plusieurs IDs ou la sentinelle kAllId pour "Tous".
@@ -116,6 +189,7 @@ class Visit extends HiveObject {
     required this.id,
     required this.year,
     required this.clientId,
+    this.contactId,
     this.ivIds,
     this.planEntryIds,
     this.actionIds,
@@ -172,15 +246,23 @@ class Visit extends HiveObject {
   /// Vrai si la visite a des documents joints.
   bool get hasDocuments => documentPaths != null && documentPaths!.isNotEmpty;
 
-  /// Vrai si la visite contient des tâches de suivi après le RDV.
-  bool get hasFollowUpTasks =>
-      followUpTasks != null &&
-      followUpTasks!.any((task) => task.trim().isNotEmpty);
+  static String normalizeFollowUpTaskText(String value) {
+    return VisitFollowUpTask.fromStored(value).text;
+  }
 
-  /// Tâches de suivi restantes, sans éléments vides.
-  List<String> get pendingFollowUpTasks => followUpTasks == null
-      ? const []
-      : followUpTasks!.where((task) => task.trim().isNotEmpty).toList();
+  List<VisitFollowUpTask> get followUpTaskEntries => (followUpTasks ?? [])
+      .map(VisitFollowUpTask.fromStored)
+      .where((task) => task.text.trim().isNotEmpty)
+      .toList();
+
+  /// Vrai si la visite a des tâches de suivi après le RDV.
+  bool get hasFollowUpTasks => followUpTaskEntries.isNotEmpty;
+
+  /// Tâches de suivi restantes, sans éléments vides et sans marqueur de statut.
+  List<String> get normalizedFollowUpTasks =>
+      followUpTaskEntries.map((task) => task.text).toList();
+
+  List<String> get pendingFollowUpTasks => normalizedFollowUpTasks;
 
   /// Vrai si la visite a une trame associée.
   bool get hasVisitFrame => visitFrameId != null && visitFrameId!.isNotEmpty;

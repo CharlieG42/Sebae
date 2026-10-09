@@ -214,6 +214,9 @@ class SsdmService extends ChangeNotifier {
   /// Libellé client.
   String clientLabel(String? id) => clientOf(id)?.displayName ?? '?';
 
+  /// Libellé contact.
+  String contactLabel(String? id) => contactOf(id)?.displayName ?? '?';
+
   void selectYear(int? year) {
     _selectedYear = year;
     notifyListeners();
@@ -327,16 +330,16 @@ class SsdmService extends ChangeNotifier {
   String planLineLabel(String planEntryId) {
     final e = planEntryOf(planEntryId);
     if (e == null) return '?';
-    
+
     // Obtenir les trigrammes des IVs concernés
     final ivTrigrams = e.effectiveIvIds
         .map((id) => ivOf(id)?.trigramOrEmpty ?? ivLabel(id))
         .where((t) => t.isNotEmpty)
         .join(', ');
-    
+
     final ivPart = ivTrigrams.isNotEmpty ? ivTrigrams : ivLabel(e.ivId);
     final namePart = e.title.isNotEmpty ? e.title : 'Ligne sans nom';
-    
+
     return '$ivPart - $namePart';
   }
 
@@ -344,13 +347,13 @@ class SsdmService extends ChangeNotifier {
   String planLineShortLabel(String planEntryId) {
     final e = planEntryOf(planEntryId);
     if (e == null) return '?';
-    
+
     // Obtenir le trigramme du premier IV
     final iv = ivOf(e.ivId);
     final ivPart = (iv?.trigramOrEmpty.isNotEmpty ?? false)
         ? iv!.trigramOrEmpty
         : (iv?.name ?? 'Tous');
-    
+
     final namePart = e.title.isNotEmpty ? e.title : 'Ligne sans nom';
     return '$ivPart - $namePart';
   }
@@ -759,6 +762,7 @@ class SsdmService extends ChangeNotifier {
 
   Future<void> addVisit({
     required String clientId,
+    String? contactId,
     List<String>? ivIds,
     String? planEntryId,
     String? actionId,
@@ -782,6 +786,7 @@ class SsdmService extends ChangeNotifier {
       id: _uuid.v4(),
       year: year,
       clientId: clientId,
+      contactId: contactId,
       ivIds: ivIds,
       planEntryIds: planEntryId != null ? [planEntryId] : null,
       actionIds: actionId != null ? [actionId] : null,

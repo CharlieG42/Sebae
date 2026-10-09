@@ -1,5 +1,11 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'dart:io';
 
+import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
+
+import 'package:sebae/core/storage/hive_service.dart';
+import 'package:sebae/modules/ssdm/models/visit.dart';
+import 'package:sebae/modules/wuect/models/aide.dart';
 import 'package:sebae/modules/wuect/models/pompe.dart';
 import 'package:sebae/modules/wuect/models/projet.dart';
 import 'package:sebae/modules/wuect/models/systeme.dart';
@@ -8,6 +14,8 @@ import 'package:sebae/shared/models/contact.dart';
 import 'package:sebae/shared/models/iv.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Modèles WUECT', () {
     test('Projet référence contact et IV par UUID (String)', () {
       const contactId = '7f9c9f4a-1111-4222-8333-abcdef000001';
@@ -67,6 +75,30 @@ void main() {
       expect(copy.nom, 'Nouveau Système');
       expect(copy.projetId, 5);
     });
+
+    test('Systeme applique les aides au coût net du projet', () {
+      final systeme = Systeme(
+        id: 1,
+        projetId: 5,
+        nom: 'Nouveau Système',
+        coutInvestissementTotal: 12000.0,
+        aides: [
+          Aide(
+            nom: 'CEE',
+            montant: 2500.0,
+            description: 'Certificat d’économie d’énergie',
+          ),
+          Aide(
+            nom: 'Subvention région',
+            montant: 1000.0,
+            description: 'Aide régionale',
+          ),
+        ],
+      );
+
+      expect(systeme.montantAidesTotal, 3500.0);
+      expect(systeme.coutInvestissementNet, 8500.0);
+    });
   });
 
   group('Calculs comparatifs', () {
@@ -108,10 +140,9 @@ void main() {
         coutInvestissement: 1000.0,
       );
 
-      final result = CalculService.calculerDonnees10AnsAvecPompes(
-        [pompe],
-        projet,
-      );
+      final result = CalculService.calculerDonnees10AnsAvecPompes([
+        pompe,
+      ], projet);
 
       expect(result['consommations']!.length, 10);
       expect(result['coutsEnergetiques']!.length, 10);
@@ -127,6 +158,44 @@ void main() {
   });
 
   group('Entités partagées', () {
+    test('clearStaleHiveLocks supprime les lock files obsolètes', () async {
+      final hivePath = await Directory.systemTemp.createTemp('sebae_hive_test');
+      final staleLock = File(p.join(hivePath.path, 'stale_lock_test.lock'));
+
+      await staleLock.writeAsString('stale');
+      await staleLock.setLastModified(
+        DateTime.now().subtract(const Duration(days: 1)),
+      );
+
+      await HiveService.clearStaleHiveLocks(hivePath.path);
+
+      expect(await staleLock.exists(), isFalse);
+      await hivePath.delete(recursive: true);
+    });
+
+    test(
+      'Visit normalise les tâches de suivi et les affiche sans marqueur',
+      () {
+        final visit = Visit(
+          id: 'visit-1',
+          year: 2026,
+          clientId: 'client-1',
+          appointmentDate: DateTime(2026, 10, 12),
+          followUpTasks: [
+            'Relancer le client',
+            '[DONE] Envoyer le devis',
+            '   ',
+          ],
+        );
+
+        expect(visit.hasFollowUpTasks, isTrue);
+        expect(visit.pendingFollowUpTasks, [
+          'Relancer le client',
+          'Envoyer le devis',
+        ]);
+      },
+    );
+
     test('IV partagé : trigramme et libellé court', () {
       final iv = Iv(id: 'iv1', name: 'Charles-Elie GENTIL', trigram: 'CEG');
       expect(iv.shortLabel, 'CEG');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../core/storage/box_names.dart';
 import '../shared/models/client.dart';
@@ -28,6 +29,13 @@ class DataHome extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Bases de données partagées'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.close),
+              tooltip: 'Quitter',
+              onPressed: () => windowManager.close(),
+            ),
+          ],
           bottom: const TabBar(
             isScrollable: true,
             tabs: [

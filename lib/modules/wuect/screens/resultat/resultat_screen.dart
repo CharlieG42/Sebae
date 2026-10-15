@@ -888,8 +888,9 @@ class _ResultatScreenState extends State<ResultatScreen> {
       debugPrint('[DEBUG ResultatScreen] ERREUR dans _loadData(): $e');
       debugPrint('[DEBUG ResultatScreen] Stack trace: $stackTrace');
       setState(() => _isLoading = false);
-      if (mounted)
+      if (mounted) {
         ErrorHandler.showSnackBar(context, 'Erreur de calcul: $e', error: true);
+      }
     }
   }
 
@@ -2214,8 +2215,9 @@ class _ResultatScreenState extends State<ResultatScreen> {
   /// Les graphiques (consommation/coût) sont automatiquement insérés si les placeholders
   /// {{GRAPHIQUE_CONSOMMATION}} et {{GRAPHIQUE_COUT}} sont présents dans le template.
   Future<void> _exportWordReport() async {
-    if (_projet == null || _systemeAncien == null || _systemeNouveau == null)
+    if (_projet == null || _systemeAncien == null || _systemeNouveau == null) {
       return;
+    }
 
     try {
       final templateBytes = (await rootBundle.load(
@@ -2283,8 +2285,9 @@ class _ResultatScreenState extends State<ResultatScreen> {
   /// Les graphiques (consommation/coût) sont automatiquement insérés si les placeholders
   /// {{GRAPHIQUE_CONSOMMATION}} et {{GRAPHIQUE_COUT}} sont présents dans le template.
   Future<void> _saveWordReportAs() async {
-    if (_projet == null || _systemeAncien == null || _systemeNouveau == null)
+    if (_projet == null || _systemeAncien == null || _systemeNouveau == null) {
       return;
+    }
 
     try {
       final templateBytes = (await rootBundle.load(

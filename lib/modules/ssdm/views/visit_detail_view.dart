@@ -367,7 +367,7 @@ class VisitDetailView extends StatelessWidget {
                           SizedBox(
                             width: 170,
                             child: DropdownButtonFormField<FollowUpTaskStatus>(
-                              value: task.status,
+                              initialValue: task.status,
                               isExpanded: true,
                               decoration: const InputDecoration(
                                 contentPadding: EdgeInsets.symmetric(
@@ -673,7 +673,7 @@ class VisitDetailView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<FollowUpTaskStatus>(
-              value: selectedStatus,
+              initialValue: selectedStatus,
               decoration: const InputDecoration(
                 labelText: 'État initial',
                 border: OutlineInputBorder(),

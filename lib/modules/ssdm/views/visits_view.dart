@@ -1287,7 +1287,7 @@ class _VisitDialogState extends State<_VisitDialog> {
             children: [
               // Client (base partagée)
               DropdownButtonFormField<String>(
-                value: _clientId.isEmpty ? null : _clientId,
+                initialValue: _clientId.isEmpty ? null : _clientId,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Client *',
@@ -1322,7 +1322,7 @@ class _VisitDialogState extends State<_VisitDialog> {
 
               // Contact (base partagée)
               DropdownButtonFormField<String?>(
-                value: _contactId,
+                initialValue: _contactId,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Contact',

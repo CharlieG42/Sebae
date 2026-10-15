@@ -22,8 +22,9 @@ class CalculService {
     // Limiter percentagePerteRendement à [0, 100] pour éviter des calculs aberrants
     final percentageClamped = percentagePerteRendement.clamp(0.0, 100.0);
 
-    if (percentageClamped >= 100.0)
+    if (percentageClamped >= 100.0) {
       return 0.0; // Si perte >= 100%, rendement = 0
+    }
     final muCoef = percentageClamped / 100.0;
     final anneesEcoulees = anneeEnCours - anneeInstallation;
 

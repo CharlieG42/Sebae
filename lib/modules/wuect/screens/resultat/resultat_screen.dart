@@ -2124,31 +2124,6 @@ class _ResultatScreenState extends State<ResultatScreen> {
     // Caractéristiques de la première pompe de chaque système (le gabarit
     // fourni n'affiche qu'une pompe par système ; s'il y en a plusieurs,
     // seule la première est reprise ici).
-    void addPompeTags(String prefix, List<Pompe> pompes) {
-      if (pompes.isEmpty) return;
-      final pompe = pompes.first;
-      tags['${prefix}_MARQUE'] = pompe.marque;
-      tags['${prefix}_MODELE'] = pompe.modele;
-      tags['${prefix}_PUISSANCE_NOMINALE'] =
-          '${_formatNumber(pompe.puissanceNominale)} kW';
-      tags['${prefix}_DEBIT'] = '${_formatNumber(pompe.debit)} m³/h';
-      tags['${prefix}_HMT'] = '${_formatNumber(pompe.hmt)} mCE';
-      tags['${prefix}_RENDEMENT_POMPE'] =
-          '${percentFormat.format(pompe.rendementInitialPompe)} %';
-      tags['${prefix}_RENDEMENT_MOTEUR'] =
-          '${percentFormat.format(pompe.rendementInitialMoteur)} %';
-      tags['${prefix}_ANNEE_INSTALLATION'] = '${pompe.anneeInstallation}';
-      tags['${prefix}_HEURES_FONCTIONNEMENT'] =
-          '${formatUnit(pompe.heuresFonctionnement.toDouble())} h';
-      tags['${prefix}_COUT_INVESTISSEMENT'] = _formatCurrency(
-        pompe.coutInvestissement,
-      );
-      tags['${prefix}_P1_ESTIMEE'] = '${_formatNumber(pompe.p1Estimee)} kW';
-    }
-
-    addPompeTags('POMPE_ANCIEN_1', _pompesAncien);
-    addPompeTags('POMPE_NOUVEAU_1', _pompesNouveau);
-
     return tags;
   }
 
@@ -2188,6 +2163,58 @@ class _ResultatScreenState extends State<ResultatScreen> {
       };
     });
   }
+
+  final percentFormat = NumberFormat('#,##0.0', 'fr_FR');
+
+  /// Construit une entrée de tags par pompe pour le système ancien
+  /// Chaque pompe est représentée par une Map avec les tags (sans le suffixe _i).
+  /// Le service WordReportService ajoutera lui-même _1, _2, etc.
+  List<Map<String, String>> _buildPompeAncienRows() {
+    return List.generate(_pompesAncien.length, (i) {
+      final pompe = _pompesAncien[i];
+      final index = i + 1;
+      return {
+        'POMPE_ANCIEN_${index}_MARQUE': pompe.marque,
+        'POMPE_ANCIEN_${index}_MODELE': pompe.modele,
+        'POMPE_ANCIEN_${index}_PUISSANCE_NOMINALE': '${_formatNumber(pompe.puissanceNominale)} kW',
+        'POMPE_ANCIEN_${index}_DEBIT': '${_formatNumber(pompe.debit)} m³/h',
+        'POMPE_ANCIEN_${index}_HMT': '${_formatNumber(pompe.hmt)} mCE',
+        'POMPE_ANCIEN_${index}_RENDEMENT_POMPE': '${percentFormat.format(pompe.rendementInitialPompe)} %',
+        'POMPE_ANCIEN_${index}_RENDEMENT_MOTEUR': '${percentFormat.format(pompe.rendementInitialMoteur)} %',
+        'POMPE_ANCIEN_${index}_ANNEE_INSTALLATION': '${pompe.anneeInstallation}',
+        'POMPE_ANCIEN_${index}_HEURES_FONCTIONNEMENT': '${formatUnit(pompe.heuresFonctionnement.toDouble())} h',
+        'POMPE_ANCIEN_${index}_COUT_INVESTISSEMENT': _formatCurrency(pompe.coutInvestissement),
+        'POMPE_ANCIEN_${index}_P1_ESTIMEE': '${_formatNumber(pompe.p1Estimee)} kW',
+        'POMPE_ANCIEN_${index}_P1_CALCULEE': '${_formatNumber(pompe.p1Calculee)} kW',
+        'POMPE_ANCIEN_${index}_ENERGIE_SPECIFIQUE': _formatNumber(pompe.energieSpecifique),
+      };
+    });
+  }
+
+  /// Construit une entrée de tags par pompe pour le système nouveau
+    /// Constuit une entrée de tags par pompe pour le système nouveau
+  List<Map<String, String>> _buildPompeNouveauRows() {
+    return List.generate(_pompesNouveau.length, (i) {
+      final pompe = _pompesNouveau[i];
+      final index = i + 1;
+      return {
+        'POMPE_NOUVEAU_${index}_MARQUE': pompe.marque,
+        'POMPE_NOUVEAU_${index}_MODELE': pompe.modele,
+        'POMPE_NOUVEAU_${index}_PUISSANCE_NOMINALE': '${_formatNumber(pompe.puissanceNominale)} kW',
+        'POMPE_NOUVEAU_${index}_DEBIT': '${_formatNumber(pompe.debit)} m³/h',
+        'POMPE_NOUVEAU_${index}_HMT': '${_formatNumber(pompe.hmt)} mCE',
+        'POMPE_NOUVEAU_${index}_RENDEMENT_POMPE': '${percentFormat.format(pompe.rendementInitialPompe)} %',
+        'POMPE_NOUVEAU_${index}_RENDEMENT_MOTEUR': '${percentFormat.format(pompe.rendementInitialMoteur)} %',
+        'POMPE_NOUVEAU_${index}_ANNEE_INSTALLATION': '${pompe.anneeInstallation}',
+        'POMPE_NOUVEAU_${index}_HEURES_FONCTIONNEMENT': '${formatUnit(pompe.heuresFonctionnement.toDouble())} h',
+        'POMPE_NOUVEAU_${index}_COUT_INVESTISSEMENT': _formatCurrency(pompe.coutInvestissement),
+        'POMPE_NOUVEAU_${index}_P1_ESTIMEE': '${_formatNumber(pompe.p1Estimee)} kW',
+        'POMPE_NOUVEAU_${index}_P1_CALCULEE': '${_formatNumber(pompe.p1Calculee)} kW',
+        'POMPE_NOUVEAU_${index}_ENERGIE_SPECIFIQUE': _formatNumber(pompe.energieSpecifique),
+      };
+    });
+  }
+
 
   /// Capture un widget comme image PNG pour insertion dans le rapport.
   /// Utilise un [GlobalKey] pointant vers un [RepaintBoundary].
@@ -2241,6 +2268,8 @@ class _ResultatScreenState extends State<ResultatScreen> {
         templateBytes: templateBytes,
         tags: _buildWordReportTags(),
         annualRows: _buildWordReportAnnualRows(),
+        pompeAncienRows: _buildPompeAncienRows(),
+        pompeNouveauRows: _buildPompeNouveauRows(),
         images: images,
       );
 
@@ -2311,6 +2340,8 @@ class _ResultatScreenState extends State<ResultatScreen> {
         templateBytes: templateBytes,
         tags: _buildWordReportTags(),
         annualRows: _buildWordReportAnnualRows(),
+        pompeAncienRows: _buildPompeAncienRows(),
+        pompeNouveauRows: _buildPompeNouveauRows(),
         images: images,
       );
 

@@ -63,6 +63,8 @@ class WordReportService {
     required Map<String, String> tags,
     List<Map<String, String>> annualRows = const [],
     Map<String, Uint8List> images = const {},
+    List<Map<String, String>> pompeAncienRows = const [],
+    List<Map<String, String>> pompeNouveauRows = const [],
   }) async {
     final archive = ZipDecoder().decodeBytes(templateBytes);
 
@@ -78,6 +80,16 @@ class WordReportService {
     //    et fusionner ses tags indexés dans la map globale.
     final allTags = Map<String, String>.from(tags);
     xml = _expandAnnualTable(xml, annualRows, allTags);
+
+    // 1b) Fusionner les tags des pompes anciennes dans la map globale
+    for (final pompeRow in pompeAncienRows) {
+      allTags.addAll(pompeRow);
+    }
+    
+    // 1c) Fusionner les tags des pompes nouvelles dans la map globale
+    for (final pompeRow in pompeNouveauRows) {
+      allTags.addAll(pompeRow);
+    }
 
     // 2) Remplacer tous les tags {{...}} restants, y compris ceux éclatés
     //    entre plusieurs runs Word (<w:t>). Les placeholders d'image (dans
@@ -185,13 +197,13 @@ class WordReportService {
     // </w:tr> correspondant. On exige un caractère non-alphabétique juste
     // après "<w:tr" pour ne pas confondre avec <w:trPr> (propriétés de
     // ligne), que Word peut ajouter à l'édition.
-    final trOpenPattern = RegExp(r'<w:tr[ >/]');
+    final trOpenPattern = RegExp(r'<w:tr(?=[ >/])', caseSensitive: false);
     final trOpenMatches = trOpenPattern
         .allMatches(xml.substring(0, anchorIndex))
         .toList();
     if (trOpenMatches.isEmpty) return xml; // gabarit inattendu, on n'y touche pas
     final trStart = trOpenMatches.last.start;
-    final trEndTagIndex = xml.indexOf('</w:tr>', anchorIndex);
+    final trEndTagIndex = xml.toLowerCase().indexOf('</w:tr>', anchorIndex);
     if (trEndTagIndex == -1) return xml;
     final trEnd = trEndTagIndex + '</w:tr>'.length;
 
@@ -248,6 +260,7 @@ class WordReportService {
     final runPattern = RegExp(
       r'<w:t(?=[ >/])(?:/>|[^>]*?>(?<text>.*?)</w:t>)',
       dotAll: true,
+      caseSensitive: false,
     );
 
     final runs = runPattern.allMatches(xml).toList();
@@ -360,6 +373,7 @@ class WordReportService {
     final runPattern = RegExp(
       r'<w:t(?=[ >/])(?:/>|[^>]*?>(?<text>.*?)</w:t>)',
       dotAll: true,
+      caseSensitive: false,
     );
     final runs = runPattern.allMatches(xml).toList();
     if (runs.isEmpty) return _ImageInsertResult(xml, {}, {});
@@ -418,7 +432,7 @@ class WordReportService {
     // de ne pas confondre avec <w:pPr> (propriétés du paragraphe) ou
     // <w:proofErr> (marqueur de vérification orthographique), qui
     // commencent aussi par le préfixe littéral "<w:p".
-    final pOpenPattern = RegExp(r'<w:p[ >/]');
+    final pOpenPattern = RegExp(r'<w:p(?=[ >/])', caseSensitive: false);
     final replacements = <_ParaReplacement>[];
 
     for (final m in matches) {
@@ -431,7 +445,7 @@ class WordReportService {
       final pOpens = pOpenPattern.allMatches(xml.substring(0, anchorXmlStart)).toList();
       if (pOpens.isEmpty) continue; // structure inattendue : tag laissé tel quel
       final pStart = pOpens.last.start;
-      final pEndTagIndex = xml.indexOf('</w:p>', searchFrom);
+      final pEndTagIndex = xml.toLowerCase().indexOf('</w:p>', searchFrom);
       if (pEndTagIndex == -1) continue;
       final pEnd = pEndTagIndex + '</w:p>'.length;
 
@@ -631,7 +645,9 @@ class WordReportService {
     return value
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;');
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&apos;');
   }
 }
 

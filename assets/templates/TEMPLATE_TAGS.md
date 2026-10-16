@@ -1,7 +1,7 @@
 # WUECT - Référence des Tags pour Template de Rapport DOCX
 
-> **Version** : 1.2  
-> **Date** : 23/09/2026  
+> **Version** : 2.0  
+> **Date** : 15/10/2026  
 > **Format** : DOCX avec tags à remplacer
 
 ---
@@ -14,8 +14,11 @@ Ce service génère des rapports DOCX en :
 1. Chargeant le template `assets/templates/rapport_template.docx`
 2. Remplaçant tous les tags `{{TAG}}` par les valeurs correspondantes
 3. Dupliquant automatiquement les lignes du tableau annuel basées sur `{{ANNEE_1}}`
+4. **Dupliquant automatiquement les lignes des tableaux de pompes basées sur `{{POMPE_ANCIEN_1}}` et `{{POMPE_NOUVEAU_1}}`**
 
 Le template actuel `rapport_template.docx` doit contenir les tags documentés ci-dessous pour que le rapport soit généré correctement.
+
+> **Nouveauté v2.0** : Les sections de pompes sont maintenant **dupliquées automatiquement** en fonction du nombre réel de pompes dans chaque système. Vous n'avez plus besoin de prévoir manuellement plusieurs lignes pour chaque pompe possible !
 
 **Note sur les PDF** : Les services `PdfExportService` (`lib/utils/exportPDF.dart`) et `RapportService` (`lib/services/rapport_service.dart`) ont été conservés pour référence mais ne sont plus utilisés dans l'interface principale. Le bouton "Exporter PDF" a été supprimé de l'AppBar.
 
@@ -23,11 +26,12 @@ Le template actuel `rapport_template.docx` doit contenir les tags documentés ci
 
 ## 📌 **Instructions d'utilisation**
 
-1. **Créer votre template** dans `assets/templates/template_ec.pptx` (ou .docx)
+1. **Créer votre template** dans `assets/templates/rapport_template.docx`
 2. **Insérer les tags** là où les données doivent apparaître (ex: `{{PROJET_NOM}}`)
-3. **Pour les images** : Utiliser des placeholders nommés (ex: un rectangle nommé "GRAPHIQUE_COUT")
-4. **Exporter en PDF** afin que le code flutter puisse modifier les tags
-5. **Le code Flutter** remplacera automatiquement les tags par les valeurs réelles
+3. **Pour les tableaux annuels** : Inclure une ligne modèle avec `{{ANNEE_1}}`, `{{CONSOMMATION_ANCIEN_1}}`, etc. Cette ligne sera dupliquée automatiquement pour chaque année.
+4. **Pour les tableaux de pompes** : Inclure une ligne modèle avec `{{POMPE_ANCIEN_1_MARQUE}}`, `{{POMPE_ANCIEN_1_DEBIT}}`, etc. pour le système ancien, et `{{POMPE_NOUVEAU_1_MARQUE}}`, etc. pour le système nouveau. Ces lignes seront dupliquées automatiquement pour chaque pompe.
+5. **Pour les images** : Utiliser les placeholders `{{GRAPHIQUE_CONSOMMATION}}` et `{{GRAPHIQUE_COUT}}`
+6. **Le code Flutter** remplacera automatiquement les tags par les valeurs réelles et dupliquera les sections si nécessaire
 
 ---
 
@@ -72,7 +76,13 @@ Le template actuel `rapport_template.docx` doit contenir les tags documentés ci
 
 ---
 
-### 🔧 **Pompes (caractéristiques par système)**
+#
+> **⚠️ IMPORTANT - v2.0** : Les pompes sont maintenant gérées par **duplication automatique** !
+> Vous n'avez plus besoin de prévoir manuellement `POMPE_ANCIEN_1`, `POMPE_ANCIEN_2`, etc. dans votre template.
+> Il suffit d'inclure **une seule ligne modèle** avec les tags `POMPE_ANCIEN_1_*` (par exemple `{{POMPE_ANCIEN_1_MARQUE}}`) dans un tableau Word, et le système la dupliquera automatiquement pour chaque pompe du système.
+> Le même principe s'applique pour `POMPE_NOUVEAU_1_*`.
+
+## 🔧 **Pompes (caractéristiques par système)**
 
 > Un système peut contenir plusieurs pompes. Comme pour les données année par
 > année, utilisez un index **j** (1 à N) pour désigner la j-ième pompe du

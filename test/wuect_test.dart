@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -10,6 +13,7 @@ import 'package:sebae/modules/wuect/models/pompe.dart';
 import 'package:sebae/modules/wuect/models/projet.dart';
 import 'package:sebae/modules/wuect/models/systeme.dart';
 import 'package:sebae/modules/wuect/services/calcul_service.dart';
+import 'package:sebae/modules/wuect/services/word_report_service.dart';
 import 'package:sebae/shared/models/contact.dart';
 import 'package:sebae/shared/models/iv.dart';
 
@@ -154,6 +158,48 @@ void main() {
       for (int i = 1; i < couts.length; i++) {
         expect(couts[i], greaterThan(couts[i - 1]));
       }
+    });
+  });
+
+  group('Rapport Word', () {
+    test('remplace les tags Word même si Word a inséré des espaces autour des underscores', () async {
+      final documentXml = '''
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>{{POMPE_ NOUVEAU _1_MODELE}}</w:t></w:r></w:p>
+    <w:p><w:r><w:t>{{POMPE_ ANCIEN _1_ P1 _ESTIMEE}}</w:t></w:r></w:p>
+    <w:p><w:r><w:t>{{POMPE_NOUVEAU_1_MARQUE}}</w:t></w:r></w:p>
+  </w:body>
+</w:document>
+''';
+
+      final archive = Archive();
+      archive.addFile(
+        ArchiveFile('word/document.xml', utf8.encode(documentXml).length, utf8.encode(documentXml)),
+      );
+
+      final out = await WordReportService.generateReport(
+        templateBytes: Uint8List.fromList(ZipEncoder().encode(archive)),
+        tags: {
+          'POMPE_NOUVEAU_1_MODELE': 'Grundfos',
+          'POMPE_ANCIEN_1_P1_ESTIMEE': '12,50 kW',
+          'POMPE_NOUVEAU_1_MARQUE': 'Bianchi',
+        },
+      );
+
+      final xml = utf8.decode(
+        ZipDecoder()
+            .decodeBytes(out)
+            .files
+            .firstWhere((f) => f.name == 'word/document.xml')
+            .content as List<int>,
+      );
+      expect(xml, contains('Grundfos'));
+      expect(xml, contains('12,50 kW'));
+      expect(xml, contains('Bianchi'));
+      expect(xml, isNot(contains('POMPE_ NOUVEAU _1_MODELE')));
+      expect(xml, isNot(contains('POMPE_ ANCIEN _1_ P1 _ESTIMEE')));
     });
   });
 

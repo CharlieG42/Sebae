@@ -1,0 +1,12 @@
+--- lib/modules/wuect/services/word_report_service.dart
++++ lib/modules/wuect/services/word_report_service.dart
+@@ -632,7 +632,9 @@ class WordReportService {
+   static String _escapeXml(String value) {
+     return value
+         .replaceAll('&', '&amp;')
+         .replaceAll('<', '&lt;')
+         .replaceAll('>', '&gt;')
++        .replaceAll('"', '&quot;')
++        .replaceAll("'", '&apos;');
+   }
+ }

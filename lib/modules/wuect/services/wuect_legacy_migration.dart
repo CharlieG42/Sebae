@@ -6,6 +6,7 @@ import 'package:hive/hive.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
+import '../../../core/storage/box_names.dart';
 import 'wuect_legacy_models.dart';
 
 /// Migration des données WUECT standalone vers Sebae.
@@ -25,7 +26,6 @@ import 'wuect_legacy_models.dart';
 /// 4. marque la migration faite (box `shared_migration_flags`) et renomme
 ///    l'ancien répertoire en `<chemin>_migrated` (aucune suppression).
 abstract final class WuectLegacyMigration {
-  static const _flagBox = 'shared_migration_flags';
   static const _flagKey = 'wuect_legacy_migrated';
 
   /// Exécute la migration si nécessaire. Ne fait rien si déjà faite ou si
@@ -36,7 +36,9 @@ abstract final class WuectLegacyMigration {
         Map<String, List<Map<String, dynamic>>> entities) writeEntities,
   }) async {
     try {
-      final flags = await Hive.openBox(_flagBox);
+      final flags = Hive.isBoxOpen(BoxNames.migrationFlags)
+          ? Hive.box(BoxNames.migrationFlags)
+          : await Hive.openBox(BoxNames.migrationFlags);
       if (flags.get(_flagKey) == true) return;
 
       final legacyPath = await findLegacyHivePath();

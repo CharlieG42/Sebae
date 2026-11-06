@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -17,6 +18,9 @@ import '../../modules/ssdm/models/sales_plan_entry.dart';
 import '../../modules/ssdm/models/ssdm_year.dart';
 import '../../modules/ssdm/models/visit.dart';
 import '../../modules/ssdm/models/visit_frame.dart';
+import '../../modules/technical_products/models/product_family.dart';
+import '../../modules/technical_products/models/technical_product.dart';
+import '../../modules/technical_products/models/validation_status.dart';
 import '../../modules/wuect/models/aide.dart';
 import '../../modules/wuect/models/pompe.dart';
 import '../../modules/wuect/models/projet.dart';
@@ -68,7 +72,7 @@ class HiveService {
         // une instance active encore en train d'écrire.
         if (ageMinutes >= 5) {
           await entry.delete();
-          print('Removed stale Hive lock: ${entry.path}');
+          debugPrint('Removed stale Hive lock: ${entry.path}');
         }
       } catch (_) {
         // Ignorer les fichiers encore verrouillés par une instance active.
@@ -95,7 +99,7 @@ class HiveService {
       }
     }
 
-    print('Hive path: ${path.join(appDir.path, "hive_data")}');
+    debugPrint('Hive path: ${path.join(appDir.path, "hive_data")}');
 
     // --- Adapters : entites partagées ---
     _registerAdapterIfNeeded(IvAdapter());
@@ -121,9 +125,14 @@ class HiveService {
     _registerAdapterIfNeeded(ProjetAdapter());
     _registerAdapterIfNeeded(SystemeAdapter());
     _registerAdapterIfNeeded(PompeAdapter());
+    _registerAdapterIfNeeded(TechnicalProductAdapter());
+    _registerAdapterIfNeeded(ProductFamilyAdapter());
+    _registerAdapterIfNeeded(ValidationStatusAdapter());
+    _registerAdapterIfNeeded(ConfidenceLevelAdapter());
 
     // --- Ouverture des boxes ---
     await Future.wait([
+      Hive.openBox(BoxNames.migrationFlags),
       Hive.openBox<Iv>(BoxNames.ivs),
       Hive.openBox<ClientGroup>(BoxNames.clientGroups),
       Hive.openBox<ClientType>(BoxNames.clientTypes),
@@ -144,6 +153,7 @@ class HiveService {
       Hive.openBox<Systeme>(BoxNames.wuectSystemes),
       Hive.openBox<Pompe>(BoxNames.wuectPompes),
       Hive.openBox(BoxNames.wuectSettings),
+      Hive.openBox<TechnicalProduct>(BoxNames.technicalProducts),
     ]);
 
     _initialized = true;
@@ -165,9 +175,9 @@ class HiveService {
       }
 
       final backupDir = await backupTo(defaultBackupPath);
-      print('Automatic Hive backup created: $backupDir');
+      debugPrint('Automatic Hive backup created: $backupDir');
     } catch (error) {
-      print('Automatic Hive backup failed: $error');
+      debugPrint('Automatic Hive backup failed: $error');
     }
   }
 

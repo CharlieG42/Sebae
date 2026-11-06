@@ -9,6 +9,7 @@
 ///   (ex. `ssdm_` pour Service Sales Dev Management).
 abstract final class BoxNames {
   // --- Boxes partagées (socle commun) ---
+  static const migrationFlags = 'shared_migration_flags';
   static const ivs = 'shared_ivs';
   static const clientGroups = 'shared_client_groups';
   static const clientTypes = 'shared_client_types';
@@ -29,7 +30,11 @@ abstract final class BoxNames {
   static const wuectPompes = 'wuect_pompes';
   static const wuectSettings = 'wuect_settings';
 
+  // --- Module Produits techniques ---
+  static const technicalProducts = 'technical_products';
+
   static const all = [
+    migrationFlags,
     ivs,
     clientGroups,
     clientTypes,
@@ -45,5 +50,6 @@ abstract final class BoxNames {
     wuectSystemes,
     wuectPompes,
     wuectSettings,
+    technicalProducts,
   ];
 }

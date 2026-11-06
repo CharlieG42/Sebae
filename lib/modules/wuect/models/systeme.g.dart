@@ -21,13 +21,7 @@ class SystemeAdapter extends TypeAdapter<Systeme> {
       projetId: fields[1] as int,
       nom: fields[2] as String,
       coutInvestissementTotal: fields[3] as double,
-      aides:
-          (fields[4] as List<dynamic>?)?.map((e) {
-            if (e is Aide) return e;
-            if (e is Map) return Aide.fromMap(Map<String, dynamic>.from(e));
-            return Aide();
-          }).toList() ??
-          const [],
+      aides: fields[4] == null ? [] : (fields[4] as List).cast<Aide>(),
     );
   }
 

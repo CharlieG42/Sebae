@@ -54,12 +54,15 @@ class PdfExportService {
     );
 
     try {
+      if (!context.mounted) return;
       final bytes = await doc.save();
+      if (!context.mounted) return;
       await Printing.sharePdf(
         bytes: bytes,
         filename: '${_sanitizeFilename(projet.nomSite)}_rapport_complet.pdf',
       );
     } catch (e) {
+      if (!context.mounted) return;
       ErrorHandler.showSnackBar(context, 'Erreur export PDF: $e', error: true);
     }
   }
@@ -89,7 +92,9 @@ class PdfExportService {
     );
 
     try {
+      if (!context.mounted) return;
       final bytes = await doc.save();
+      if (!context.mounted) return;
       Directory dir;
       if (customOutputDirectory != null && customOutputDirectory.isNotEmpty) {
         dir = Directory(customOutputDirectory);
@@ -104,8 +109,10 @@ class PdfExportService {
       final file = File(filePath);
       await file.writeAsBytes(bytes);
 
+      if (!context.mounted) return;
       ErrorHandler.showSnackBar(context, 'PDF sauvegardé: $filePath');
     } catch (e) {
+      if (!context.mounted) return;
       ErrorHandler.showSnackBar(
         context,
         'Erreur sauvegarde PDF: $e',
@@ -178,13 +185,16 @@ class PdfExportService {
     );
 
     try {
+      if (!context.mounted) return;
       final bytes = await doc.save();
+      if (!context.mounted) return;
       await Printing.sharePdf(
         bytes: bytes,
         filename:
             '${_sanitizeFilename('comparatif_$projetName')}_${DateTime.now().millisecondsSinceEpoch}.pdf',
       );
     } catch (e) {
+      if (!context.mounted) return;
       ErrorHandler.showSnackBar(context, 'Erreur export PDF: $e', error: true);
     }
   }
@@ -211,8 +221,11 @@ class PdfExportService {
     );
 
     try {
+      if (!context.mounted) return;
       final bytes = await doc.save();
+      if (!context.mounted) return;
       final dir = await getApplicationDocumentsDirectory();
+      if (!context.mounted) return;
       final safeName = _sanitizeFilename('comparatif_$projetName');
       final filePath = p.join(
         dir.path,
@@ -221,8 +234,10 @@ class PdfExportService {
       final file = File(filePath);
       await file.writeAsBytes(bytes);
 
+      if (!context.mounted) return;
       ErrorHandler.showSnackBar(context, 'PDF sauvegardé: $filePath');
     } catch (e) {
+      if (!context.mounted) return;
       ErrorHandler.showSnackBar(
         context,
         'Erreur sauvegarde PDF: $e',

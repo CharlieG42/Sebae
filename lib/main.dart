@@ -3,6 +3,7 @@ import 'package:window_manager/window_manager.dart';
 import 'app.dart';
 import 'core/storage/hive_service.dart';
 import 'modules/ssdm/services/ssdm_service.dart';
+import 'modules/technical_products/services/technical_product_service.dart';
 import 'modules/wuect/services/wuect_legacy_migration.dart';
 import 'modules/wuect/services/wuect_migration_writer.dart';
 import 'package:provider/provider.dart';
@@ -29,6 +30,7 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SsdmService()),
+        ChangeNotifierProvider(create: (_) => TechnicalProductService()),
       ],
       child: const SebaeApp(),
     ),

@@ -52,6 +52,8 @@ class VisitAdapter extends TypeAdapter<Visit> {
       ..write(obj.year)
       ..writeByte(2)
       ..write(obj.clientId)
+      ..writeByte(21)
+      ..write(obj.contactId)
       ..writeByte(3)
       ..write(obj.ivIds)
       ..writeByte(4)
@@ -87,9 +89,7 @@ class VisitAdapter extends TypeAdapter<Visit> {
       ..writeByte(19)
       ..write(obj.visitFrameId)
       ..writeByte(20)
-      ..write(obj.followUpTasks)
-      ..writeByte(21)
-      ..write(obj.contactId);
+      ..write(obj.followUpTasks);
   }
 
   @override

@@ -190,12 +190,14 @@ class RapportService {
         final filePath = p.join(dir.path, filename);
         final file = File(filePath);
         await file.writeAsBytes(bytes);
-        
+
+        if (!context.mounted) return;
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(
           SnackBar(content: Text('PDF sauvegardé: $filePath')),
         );
       }
     } catch (e) {
+      if (!context.mounted) return;
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(content: Text('Erreur lors de la génération du rapport: $e')),
       );

@@ -18,7 +18,7 @@ class Systeme {
   @HiveField(3)
   final double coutInvestissementTotal; // €
 
-  @HiveField(4)
+  @HiveField(4, defaultValue: [])
   final List<Aide> aides;
 
   double get montantAidesTotal =>

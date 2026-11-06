@@ -16,11 +16,10 @@ class AideAdapter extends TypeAdapter<Aide> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-
     return Aide(
-      nom: fields[0] as String? ?? '',
-      montant: fields[1] as double? ?? 0.0,
-      description: fields[2] as String? ?? '',
+      nom: fields[0] as String,
+      montant: fields[1] as double,
+      description: fields[2] as String,
     );
   }
 

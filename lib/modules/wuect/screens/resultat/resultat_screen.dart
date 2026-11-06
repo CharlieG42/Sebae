@@ -2296,10 +2296,14 @@ class _ResultatScreenState extends State<ResultatScreen> {
       // Ouvrir automatiquement le fichier après sauvegarde
       if (mounted) {
         await OpenFilex.open(filePath);
+        if (!mounted) return;
+        if (!context.mounted) return;
         ErrorHandler.showSnackBar(context, 'Rapport Word exporté: $filePath');
       }
     } catch (e) {
       if (mounted) {
+        if (!mounted) return;
+        if (!context.mounted) return;
         ErrorHandler.showSnackBar(
           context,
           'Erreur export Word: $e',

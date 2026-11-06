@@ -46,7 +46,9 @@ class SettingsService {
   /// au démarrage de Sebae, les lectures Hive sont synchrones).
   void ensureInitialized() {
     if (!_loaded) {
-      _settingsBox = Hive.box(_settingsBoxName);
+      _settingsBox = Hive.isBoxOpen(_settingsBoxName)
+        ? Hive.box(_settingsBoxName)
+        : Hive.box(_settingsBoxName);
       _loadSettingsSync();
       _loaded = true;
     }

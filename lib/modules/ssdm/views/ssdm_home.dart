@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../shared/widgets/empty_state.dart';
+import '../../assessment/views/assessment_home.dart';
 import '../services/ssdm_service.dart';
 import 'actions_view.dart';
 import 'create_year_dialog.dart';
@@ -57,7 +58,10 @@ class _SsdmHomeState extends State<SsdmHome>
 
     if (years.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('SSDM')),
+        appBar: AppBar(
+          title: const Text('SSDM'),
+          actions: [ _AssessmentEntryButton() ],
+        ),
         body: EmptyState(
           icon: Icons.event_available_outlined,
           title: 'Aucune année créée',
@@ -76,6 +80,7 @@ class _SsdmHomeState extends State<SsdmHome>
       appBar: AppBar(
         title: const Text('SSDM'),
         actions: [
+          _AssessmentEntryButton(),
           YearSelector(years: years, service: service),
           const SizedBox(width: 8),
         ],
@@ -102,6 +107,23 @@ class _SsdmHomeState extends State<SsdmHome>
           VisitsView(),
           VisitFrameView(),
         ],
+      ),
+    );
+  }
+}
+
+/// Point d'entrée vers l'Assessment IV depuis le module SSDM.
+///
+/// Navigation pure : SSDM n'accède à aucune donnée du module Assessment,
+/// conformément à la règle d'indépendance des modules.
+class _AssessmentEntryButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Assessment IV — Évaluation des commerciaux',
+      icon: const Icon(Icons.quiz_outlined),
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const AssessmentHome()),
       ),
     );
   }

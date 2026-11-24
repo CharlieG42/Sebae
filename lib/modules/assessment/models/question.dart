@@ -126,7 +126,10 @@ class Question extends Equatable {
       options: (json['options'] as List?)?.cast<String>(),
       minSelections: json['minSelections'] as int?,
       maxSelections: json['maxSelections'] as int?,
-      labels: (json['labels'] as Map?)?.cast<int, String>(),
+      // Les clés JSON sont toujours des String : les convertir en int
+      // (un `cast` paresseux ferait échouer la ré-encodage JSON.
+      labels: (json['labels'] as Map<String, dynamic>?)
+          ?.map((key, value) => MapEntry(int.parse(key), value as String)),
       trueLabel: json['trueLabel'] as String?,
       falseLabel: json['falseLabel'] as String?,
       defaultOption: json['defaultOption'] as String?,
@@ -154,7 +157,9 @@ class Question extends Equatable {
       if (options != null) 'options': options,
       if (minSelections != null) 'minSelections': minSelections,
       if (maxSelections != null) 'maxSelections': maxSelections,
-      if (labels != null) 'labels': labels,
+      if (labels != null)
+        'labels': labels!
+            .map((key, value) => MapEntry(key.toString(), value)),
       if (trueLabel != null) 'trueLabel': trueLabel,
       if (falseLabel != null) 'falseLabel': falseLabel,
       if (defaultOption != null) 'defaultOption': defaultOption,

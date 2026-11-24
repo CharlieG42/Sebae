@@ -277,10 +277,14 @@ class WordReportService {
       cursor += t.length;
     }
 
-    final tagPattern = RegExp(r'\{\{([A-Z0-9_]+)\}\}');
+    // Les underscores peuvent être entourés d'espaces par la correction
+    // automatique de Word (ex. `{{POMPE_ NOUVEAU _1_MODELE}}`) : on accepte
+    // les espaces dans le pattern puis on les supprime avant la recherche.
+    final tagPattern = RegExp(r'\{\{([A-Z0-9][A-Z0-9_ ]*)\}\}');
     final tagMatches = tagPattern
         .allMatches(flatText)
-        .where((m) => tags.containsKey(m.group(1)))
+        .map((m) => (m, m.group(1)!.replaceAll(' ', '')))
+        .where((e) => tags.containsKey(e.$2))
         .toList();
     if (tagMatches.isEmpty) return xml;
 
@@ -305,8 +309,8 @@ class WordReportService {
     // sont alors simplement vidés sur ce segment).
     final spansByRun = <int, List<_Span>>{};
 
-    for (final m in tagMatches) {
-      final value = tags[m.group(1)!]!;
+    for (final (m, key) in tagMatches) {
+      final value = tags[key]!;
       final firstRun = runIndexForOffset(m.start);
       final lastRun = runIndexForOffset(m.end - 1);
       for (var i = firstRun; i <= lastRun; i++) {

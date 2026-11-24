@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'theme.dart';
 import 'question.dart';
-import 'question_type.dart';
 
 /// Métadonnées de l'assessment
 class AssessmentMetadata extends Equatable {

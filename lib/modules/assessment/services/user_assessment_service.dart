@@ -2,9 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_assessment.dart';
-import '../models/assessment_structure.dart';
 import '../models/answer.dart';
-import '../models/question.dart';
 import '../models/question_type.dart';
 import 'assessment_structure_service.dart';
 

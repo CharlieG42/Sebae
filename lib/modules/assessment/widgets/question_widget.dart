@@ -457,7 +457,6 @@ class _QuestionWidgetState extends State<QuestionWidget> {
               margin: const EdgeInsets.only(top: 4),
               child: Row(
                 children: columns.asMap().entries.map((colEntry) {
-                  final colIndex = colEntry.key;
                   final column = colEntry.value;
                   final cellKey = column.name;
                   final cellValue = row[cellKey];

@@ -154,6 +154,7 @@ class HiveService {
       Hive.openBox<Pompe>(BoxNames.wuectPompes),
       Hive.openBox(BoxNames.wuectSettings),
       Hive.openBox<TechnicalProduct>(BoxNames.technicalProducts),
+      Hive.openBox(BoxNames.one2OneMeetings),
     ]);
 
     _initialized = true;

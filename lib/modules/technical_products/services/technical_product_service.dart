@@ -208,6 +208,8 @@ class TechnicalProductService extends ChangeNotifier {
     final combinedText = slideTexts.join('\n\n');
     final title = _inferTitle(sourceName, combinedText);
     final family = _inferProductFamily(title, combinedText);
+    final manufacturer = _inferManufacturer(title, combinedText);
+    final models = _inferModels(combinedText);
     final applications = _inferApplications(combinedText, title);
     final standards = _inferStandards(combinedText);
     final metrics = _inferMetrics(combinedText);
@@ -219,6 +221,15 @@ class TechnicalProductService extends ChangeNotifier {
     );
     final characteristics = _inferCharacteristics(combinedText);
     final tags = _inferTags(title, combinedText, family);
+    
+    // Add manufacturer and models to tags if found
+    if (manufacturer != null) {
+      tags.add(manufacturer);
+    }
+    if (models.isNotEmpty) {
+      tags.addAll(models);
+    }
+    
     final technicalSummary = _buildTechnicalSummary(
       title: title,
       family: family,
@@ -423,44 +434,118 @@ class TechnicalProductService extends ChangeNotifier {
   }
 
   static List<String> _inferCharacteristics(String combinedText) {
-    final sentences = RegExp(r'[^.!?\n]+[.!?]')
-        .allMatches(combinedText)
-        .map((match) => match.group(0)!.trim())
-        .where((sentence) => sentence.isNotEmpty)
-        .toList();
-
-    final extracted = <String>[];
-    final seen = <String>{};
-
-    for (final sentence in sentences) {
-      final match = RegExp(
-        r'(?:débit|flow|capacité|capacity|pression|puissance|tension|courant|température|diamètre|hauteur|fréquence|consommation|vitesse|niveau|priorité)[^0-9]*[0-9][0-9., ]*(?:m3/h|m3/s|l/s|l/min|bar|kPa|kW|W|V|A|mm|cm|m|Hz|rpm|°C|°F|mbar)',
-        caseSensitive: false,
-      ).firstMatch(sentence);
-
+    final characteristics = <String>[];
+    
+    // Performance metrics
+    final performancePatterns = [
+      RegExp(r'\b(?:débit|flow|capacité|portata)\b[\s\w:]*(\d+(?:[.,]\d+)?\s*(?:m3/h|m³/h|L/s|gpm|us\s*gpm))', caseSensitive: false),
+      RegExp(r'\b(?:haute pression|basse pression)\b', caseSensitive: false),
+      RegExp(r'\b(?:pression|pressure|pression\s+max|pression\s+nominale|pression\s+manométrique|HMT)\b[\s\w:]*(\d+(?:[.,]\d+)?\s*(?:bar|psi|kPa|Pa|mbar|atm))', caseSensitive: false),
+      RegExp(r'\b(?:température|temperature|temp)\b[\s\w:]*(\d+(?:[.,]\d+)?\s*°?[CF]|\d+(?:[.,]\d+)?\s*(?:celsius|fahrenheit|K))', caseSensitive: false),
+      RegExp(r'\b(?:puissance|power|potenza|potencia)\b[\s\w:]*(\d+(?:[.,]\d+)?\s*(?:kW|W|HP|CV|ch|PS))', caseSensitive: false),
+      RegExp(r'\b(?:rendement|efficiency|efficacité|ie[1-4])\b[\s\w:]*(\d+(?:[.,]\d+)?\s*%|IE[1-4])', caseSensitive: false),
+      RegExp(r'\b(?:tension|voltage|alimentation|tensione)\b[\s\w:]*(\d+(?:[.,]\d+)?\s*V(?:AC|DC)?)', caseSensitive: false),
+      RegExp(r'\b(?:courant|current|intensité|corrente|amp)\b[\s\w:]*(\d+(?:[.,]\d+)?\s*A(?:C)?)', caseSensitive: false),
+      RegExp(r'\b(?:vitesse|speed|rpm|t/min|tr/min|tr\.min\-1|min\-1)\b[\s\w:]*(\d+(?:[.,]\d+)?\s*(?:rpm|t/min|tr/min|min\-1))', caseSensitive: false),
+    ];
+    
+    // Connectivity and protocols
+    final connectivityPatterns = [
+      RegExp(r'\bmodbus\b', caseSensitive: false),
+      RegExp(r'\bbacnet\b', caseSensitive: false),
+      RegExp(r'\blonworks\b', caseSensitive: false),
+      RegExp(r'\bprofibus\b', caseSensitive: false),
+      RegExp(r'\bprofinet\b', caseSensitive: false),
+      RegExp(r'\bethernet\b', caseSensitive: false),
+      RegExp(r'\b4-20ma\b', caseSensitive: false),
+      RegExp(r'\b0-10v\b', caseSensitive: false),
+      RegExp(r'\bbluetooth\b', caseSensitive: false),
+      RegExp(r'\bwifi\b', caseSensitive: false),
+      RegExp(r'\bio-link\b', caseSensitive: false),
+      RegExp(r'\bgateway\b', caseSensitive: false),
+    ];
+    
+    // Material and construction
+    final materialPatterns = [
+      RegExp(r'\binox\b', caseSensitive: false),
+      RegExp(r'\bacier\s+(?:inox|inoxydable)', caseSensitive: false),
+      RegExp(r'\bacier\s+carbone', caseSensitive: false),
+      RegExp(r'\bfonte\b', caseSensitive: false),
+      RegExp(r'\bcuivre\b', caseSensitive: false),
+      RegExp(r'\blaiton\b', caseSensitive: false),
+      RegExp(r'\bplastique\b', caseSensitive: false),
+      RegExp(r'\bpp\b', caseSensitive: false),
+      RegExp(r'\bpvc\b', caseSensitive: false),
+      RegExp(r'\bpehd\b', caseSensitive: false),
+    ];
+    
+    // Extract performance characteristics
+    for (final pattern in performancePatterns) {
+      final match = pattern.firstMatch(combinedText);
       if (match != null) {
-        final value = match.group(0)!.trim();
-        if (value.isNotEmpty && !seen.contains(value)) {
-          seen.add(value);
-          extracted.add(value);
+        final value = match.group(0)!;
+        if (!characteristics.contains(value)) {
+          characteristics.add(value.trim());
         }
       }
-
-      if (extracted.length >= 6) {
-        break;
+    }
+    
+    // Extract connectivity characteristics
+    for (final pattern in connectivityPatterns) {
+      if (pattern.hasMatch(combinedText)) {
+        final match = pattern.firstMatch(combinedText)!;
+        final value = match.group(0)!;
+        if (!characteristics.any((c) => c.toLowerCase().contains(value.toLowerCase()))) {
+          characteristics.add(value);
+        }
       }
     }
-
-    if (extracted.isEmpty) {
-      final fallback = RegExp(r'\b\d+(?:[.,]\d+)?\s*(?:m3/h|l/s|bar|kW|V|A|mm|cm|Hz|rpm|mbar|°C|°F)\b', caseSensitive: false)
-          .allMatches(combinedText)
-          .map((match) => match.group(0)!.trim())
-          .take(6)
-          .toList();
-      return fallback;
+    
+    // Extract material characteristics
+    for (final pattern in materialPatterns) {
+      if (pattern.hasMatch(combinedText)) {
+        final match = pattern.firstMatch(combinedText)!;
+        final value = match.group(0)!;
+        if (!characteristics.any((c) => c.toLowerCase().contains(value.toLowerCase()))) {
+          characteristics.add(value);
+        }
+      }
     }
-
-    return extracted;
+    
+    // Special patterns for technical features
+    final specialFeatures = [
+      'IE4', 'IE3', 'IE2', 'IE1',
+      'IP55', 'IP54', 'IP65', 'IP66', 'IP67', 'IP68',
+      'ATM', '50Hz', '60Hz',
+      'triphasé', 'monophasé',
+      'variable speed', 'VFD', 'variateur',
+      'soft start', 'démarrage direct',
+      'couplage', 'accouplement',
+    ];
+    
+    for (final feature in specialFeatures) {
+      if (RegExp(feature, caseSensitive: false).hasMatch(combinedText)) {
+        if (!characteristics.any((c) => c.toLowerCase().contains(feature.toLowerCase()))) {
+          characteristics.add(feature);
+        }
+      }
+    }
+    
+    // Filter out empty or duplicate characteristics
+    characteristics.removeWhere((char) => char.isEmpty || char == ' ');
+    
+    // Deduplicate while preserving order
+    final seen = <String>{};
+    final uniqueCharacteristics = <String>[];
+    for (final char in characteristics) {
+      final lowerChar = char.toLowerCase();
+      if (!seen.contains(lowerChar)) {
+        seen.add(lowerChar);
+        uniqueCharacteristics.add(char);
+      }
+    }
+    
+    return uniqueCharacteristics.take(15).toList();
   }
 
   static List<String> _inferTags(String title, String combinedText, ProductFamily family) {
@@ -555,15 +640,16 @@ class TechnicalProductService extends ChangeNotifier {
   static Map<String, String> _inferMetrics(String combinedText) {
     final map = <String, String>{};
     final patterns = <String, RegExp>{
-      'débit': RegExp(r'(?:débit|flow|capacité|capacity|portata)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:m3/h|m3/s|l/s|l/min|L/s|m³/h|m³/s)', caseSensitive: false),
-      'pression': RegExp(r'(?:pression|pressure|pressione)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:bar|kPa|Pa|mbar|psi)', caseSensitive: false),
-      'puissance': RegExp(r'(?:puissance|power|potenza|potencia)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:kW|W|HP|CV|ch)', caseSensitive: false),
-      'vitesse': RegExp(r'(?:vitesse|speed|velocità|velocidad)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:rpm|tr/min|min\-1|tr\.min\-1)', caseSensitive: false),
-      'tension': RegExp(r'(?:tension|voltage|tensione)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:V|kV|MV)', caseSensitive: false),
-      'courant': RegExp(r'(?:courant|current|corrente)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:A|mA)', caseSensitive: false),
-      'température': RegExp(r'(?:température|temperature|temperatura)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:°C|°F|K|Celsius|Fahrenheit)', caseSensitive: false),
-      'hauteur manométrique': RegExp(r'(?:hauteur manométrique|HMT|head|altezza manometrica)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:m|meters|mètres)', caseSensitive: false),
+      'débit': RegExp(r'(?:débit|flow|capacité|capacity|portata)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:m3/h|m3/s|l/s|l/min|L/s|m³/h|m³/s|gpm|us\s*gpm)', caseSensitive: false),
+      'pression': RegExp(r'(?:pression|pressure|pression\s+max|pression\s+nominale|pression\s+manométrique|HMT)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:bar|kPa|Pa|mbar|psi|atm)', caseSensitive: false),
+      'puissance': RegExp(r'(?:puissance|power|potenza|potencia)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:kW|W|HP|CV|ch|PS)', caseSensitive: false),
+      'vitesse': RegExp(r'(?:vitesse|speed|velocità|velocidad|rpm|t/min|tr/min|tr\.min\-1|min\-1)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:rpm|t/min|tr/min|min\-1)', caseSensitive: false),
+      'tension': RegExp(r'(?:tension|voltage|tensione|alimentation)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:V|kV|MV)', caseSensitive: false),
+      'courant': RegExp(r'(?:courant|current|corrente|intensité|amp)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:A|mA)', caseSensitive: false),
+      'température': RegExp(r'(?:température|temperature|temperatura|temp)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:°C|°F|K|Celsius|Fahrenheit)', caseSensitive: false),
+      'hauteur manométrique': RegExp(r'(?:hauteur\s+manométrique|HMT|head|altezza\s+manometrica|manometric\s+head)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:m|meters|mètres)', caseSensitive: false),
       'diamètre': RegExp(r'(?:diamètre|diameter|diametro)\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*(?:mm|cm|m|inch|pouce)', caseSensitive: false),
+      'rendement': RegExp(r'(?:rendement|efficiency|efficacité|ie[1-4])\s*[:=]?\s*[\d]+(?:[.,][\d]+)?\s*%|IE[1-4]', caseSensitive: false),
     };
 
     for (final entry in patterns.entries) {
@@ -573,6 +659,16 @@ class TechnicalProductService extends ChangeNotifier {
       }
     }
 
+    // Connectivity extraction
+    final connectivityKeywords = ['modbus', 'bacnet', 'lonworks', 'profibus', 'profinet', 'ethernet', '4-20ma', '0-10v', 'fieldbus'];
+    for (final keyword in connectivityKeywords) {
+      final pattern = RegExp(r'\b' + keyword + r'\b', caseSensitive: false);
+      if (pattern.hasMatch(combinedText)) {
+        map['connectivité'] = keyword;
+        break;
+      }
+    }
+    
     return map;
   }
 
@@ -758,5 +854,40 @@ class TechnicalProductService extends ChangeNotifier {
     }
     
     return migratedCount;
+  }
+
+  /// Detect common manufacturers from text
+  String? _inferManufacturer(String title, String combinedText) {
+    final manufacturers = [
+      'Grundfos', 'Sulzer', 'KSB', 'Wilo', 'Xylem',
+      'Pentair', 'Ebara', 'Caprari', 'ABB', 'Siemens',
+      'Schneider', 'Danfoss'
+    ];
+    final lowerText = '$title $combinedText'.toLowerCase();
+    for (final manufacturer in manufacturers) {
+      if (lowerText.contains(manufacturer.toLowerCase())) {
+        return manufacturer;
+      }
+    }
+    return null;
+  }
+
+  /// Extract product models/series from text (e.g., CR, MTR, MTS, etc.)
+  List<String> _inferModels(String combinedText) {
+    final modelPatterns = [
+      'CR', 'MTR', 'MTS', 'BMS', 'SEG', 'TP', 'NB', 'NK', 'SP', 'SE/SL',
+      'CUE', 'MGE', 'PULSE', 'SYSPro', 'OpenPump', 'Lightyear',
+    ];
+    
+    final foundModels = <String>[];
+    final lowerText = combinedText.toLowerCase();
+    
+    for (final pattern in modelPatterns) {
+      if (lowerText.contains(pattern.toLowerCase())) {
+        foundModels.add(pattern);
+      }
+    }
+    
+    return foundModels;
   }
 }

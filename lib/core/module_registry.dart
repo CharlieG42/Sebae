@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../modules/ssdm/ssdm_module.dart';
 import '../modules/technical_products/technical_products_module.dart';
 import '../modules/wuect/wuect_module.dart';
+import '../modules/one2one/one2one_module.dart';
 import 'module.dart';
 
 /// Registre des modules de la plateforme Sebae.
@@ -13,6 +14,7 @@ abstract final class ModuleRegistry {
         ssdmModule,
         wuectModule,
         technicalProductsModule,
+        one2OneModule,
         const SebaeModule(
           id: 'maintenance',
           name: 'Contrat Maintenance',

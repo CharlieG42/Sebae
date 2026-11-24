@@ -1,0 +1,531 @@
+{
+  "metadata": {
+    "title": "Assessment des besoins IV - Ingénieurs des Ventes",
+    "description": "Outil d'évaluation des besoins, freins et opportunités pour chaque IV afin de préparer un plan d'actions spécifique à chacun en phase avec le business plan commun.",
+    "version": "1.0.0",
+    "created": "2024-11-23T00:00:00.000Z",
+    "source": "Questionnaires IV.pdf"
+  },
+  "themes": [
+    {
+      "id": "theme_001",
+      "title": "Connaissance Technique",
+      "description": "Identifier les lacunes qui limitent la facilité d'un discours commercial autour des Service Sales",
+      "order": 1,
+      "questions": [
+        {
+          "id": "q_001_01",
+          "text": "Sur quels équipements vous sentez-vous le moins à l'aise ?",
+          "type": "checkbox",
+          "options": [
+            "Puissance (Variateurs, Démarreurs, ...)",
+            "Commande (Automate, Contrôleur, ...)",
+            "Mécanique / Tuyauterie",
+            "Économie d'Énergie, Efficience, ..."
+          ],
+          "required": false,
+          "order": 1
+        },
+        {
+          "id": "q_001_02",
+          "text": "Quels sujets techniques aimeriez-vous maîtriser davantage ?",
+          "type": "text",
+          "required": false,
+          "order": 2
+        },
+        {
+          "id": "q_001_03",
+          "text": "Lors d'une visite client, quelles questions techniques vous mettent en difficulté ?",
+          "type": "text",
+          "required": false,
+          "order": 3
+        },
+        {
+          "id": "q_001_04",
+          "text": "Avez-vous besoin d'accompagnement d'experts techniques sur certains comptes ?",
+          "type": "boolean",
+          "required": false,
+          "order": 4
+        },
+        {
+          "id": "q_001_05",
+          "text": "Évaluation : Noter de 1 à 5 le niveau de maîtrise.",
+          "type": "scale",
+          "min": 1,
+          "max": 5,
+          "labels": {
+            "1": "Très faible",
+            "5": "Excellente"
+          },
+          "required": false,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "id": "theme_002",
+      "title": "Détection des opportunités de services",
+      "description": "Mesurer la capacité à identifier les besoins cachés du client",
+      "order": 2,
+      "questions": [
+        {
+          "id": "q_002_01",
+          "text": "Lors d'une visite, recherchez-vous systématiquement :",
+          "type": "checkbox",
+          "options": [
+            "Les équipements vieillissants",
+            "Les équipements obsolètes",
+            "Les problèmes de disponibilité",
+            "Les enjeux énergétiques",
+            "Les problématiques cybersécurité",
+            "Les difficultés de maintenance"
+          ],
+          "required": false,
+          "order": 1
+        },
+        {
+          "id": "q_002_02",
+          "text": "Quels services vendez-vous le plus facilement ?",
+          "type": "multiselect",
+          "options": [
+            "Contrat de maintenance",
+            "Pièces de rechange",
+            "Audit énergétique / Energy Check",
+            "Modernisation / Retrofit",
+            "Services digitaux"
+          ],
+          "required": false,
+          "order": 2
+        },
+        {
+          "id": "q_002_03",
+          "text": "Quels services vendez-vous rarement ?",
+          "type": "multiselect",
+          "options": [
+            "Contrat de maintenance",
+            "Pièces de rechange",
+            "Audit énergétique / Energy Check",
+            "Modernisation / Retrofit",
+            "Services digitaux"
+          ],
+          "required": false,
+          "order": 3
+        },
+        {
+          "id": "q_002_04",
+          "text": "Pourquoi ?",
+          "type": "text",
+          "required": false,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "id": "theme_003",
+      "title": "Besoin d'accompagnement terrain",
+      "description": "Évaluer les besoins d'accompagnement lors des visites clients",
+      "order": 3,
+      "questions": [
+        {
+          "id": "q_003_01",
+          "text": "Souhaitez-vous être accompagné chez certains clients ?",
+          "type": "boolean",
+          "required": false,
+          "order": 1
+        },
+        {
+          "id": "q_003_02",
+          "text": "Sur quels sujets ?",
+          "type": "text",
+          "required": false,
+          "order": 2
+        },
+        {
+          "id": "q_003_03",
+          "text": "Combien de visites conjointes souhaiteriez-vous par trimestre ?",
+          "type": "number",
+          "min": 0,
+          "required": false,
+          "order": 3
+        },
+        {
+          "id": "q_003_04",
+          "text": "Quelle casquette d'expert vous aiderait le plus ?",
+          "type": "select",
+          "options": [
+            "Service Sales Developer",
+            "Responsable Offre Services",
+            "Expert Énergie",
+            "Expert Variateurs",
+            "Expert Technique",
+            "Digital Services"
+          ],
+          "required": false,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "id": "theme_004",
+      "title": "Outils commerciaux",
+      "description": "Évaluer l'efficacité des outils commerciaux actuels",
+      "order": 4,
+      "questions": [
+        {
+          "id": "q_004_01",
+          "text": "Les outils actuels vous permettent-ils d'identifier facilement des opportunités ?",
+          "type": "boolean",
+          "required": false,
+          "order": 1
+        },
+        {
+          "id": "q_004_02",
+          "text": "Quelles informations vous manquent avant de visiter un client ?",
+          "type": "text",
+          "required": false,
+          "order": 2
+        },
+        {
+          "id": "q_004_03",
+          "text": "Utilisez-vous :",
+          "type": "checkbox",
+          "options": [
+            "Installed Base",
+            "CRM",
+            "Historique des interventions",
+            "Contrats arrivant à échéance"
+          ],
+          "required": false,
+          "order": 3
+        },
+        {
+          "id": "q_004_04",
+          "text": "Note de satisfaction pour chaque outil (Note /10)",
+          "type": "table",
+          "columns": [
+            {"name": "Outil", "type": "text"},
+            {"name": "Note /10", "type": "scale", "min": 0, "max": 10}
+          ],
+          "rows": [
+            {"Outil": "CRM"},
+            {"Outil": "Installed Base"},
+            {"Outil": "Devis Services"},
+            {"Outil": "Support technique"}
+          ],
+          "allowAddRows": false,
+          "allowRemoveRows": false,
+          "required": false,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "id": "theme_005",
+      "title": "Freins à la vente de services",
+      "description": "Identifier les obstacles à la vente de services supplémentaires",
+      "order": 5,
+      "questions": [
+        {
+          "id": "q_005_01",
+          "text": "Qu'est-ce qui vous empêcherait de vendre 20% de services supplémentaires l'année prochaine ?",
+          "type": "text",
+          "required": false,
+          "order": 1
+        },
+        {
+          "id": "q_005_02",
+          "text": "Classement des freins par ordre d'importance (1 = Important à 5 = Pas Important)",
+          "type": "ranking",
+          "options": [
+            "Manque de connaissances techniques",
+            "Difficulté à identifier les besoins",
+            "Pas assez de temps",
+            "Difficulté à chiffrer",
+            "Manque d'accompagnement",
+            "Difficulté à argumenter la valeur",
+            "Manque de contacts décideurs"
+          ],
+          "required": false,
+          "order": 2
+        }
+      ]
+    },
+    {
+      "id": "theme_006",
+      "title": "Compétences et moyens",
+      "description": "Identifier ce qui manque au commercial pour vendre plus de services",
+      "order": 6,
+      "questions": [
+        {
+          "id": "q_006_01",
+          "text": "De quelles formations auriez-vous besoin ?",
+          "type": "checkbox",
+          "options": [
+            "Contrats de maintenance",
+            "Pièces de rechange",
+            "Services digitaux",
+            "Efficiency & Sustainability (Audits énergétiques)",
+            "Modernisation / Retrofit",
+            "Cybersécurité industrielle",
+            "Analyse installée (Installed Base)"
+          ],
+          "required": false,
+          "order": 1
+        },
+        {
+          "id": "q_006_02",
+          "text": "Quels outils vous manquent ?",
+          "type": "checkbox",
+          "options": [
+            "CRM",
+            "Installed Base",
+            "Configurateurs",
+            "Outils de chiffrage",
+            "Supports marketing"
+          ],
+          "required": false,
+          "order": 2
+        },
+        {
+          "id": "q_006_03",
+          "text": "Quel support attendez-vous ?",
+          "type": "checkbox",
+          "options": [
+            "Accompagnement en rendez-vous",
+            "Support avant-vente",
+            "Chiffrage rapide",
+            "Expertise technique ponctuelle"
+          ],
+          "required": false,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "id": "theme_007",
+      "title": "Analyse du potentiel Service de son secteur",
+      "description": "Évaluer le potentiel des clients du portefeuille",
+      "order": 7,
+      "questions": [
+        {
+          "id": "q_007_01",
+          "text": "Quels sont les 10 clients à plus fort potentiel Service de votre portefeuille ?",
+          "type": "text",
+          "required": false,
+          "order": 1
+        },
+        {
+          "id": "q_007_02",
+          "text": "Quels comptes sont actuellement sous-exploités ?",
+          "type": "text",
+          "required": false,
+          "order": 2
+        },
+        {
+          "id": "q_007_03",
+          "text": "Sur quels clients voyez-vous des opportunités de :",
+          "type": "checkbox",
+          "options": [
+            "Contrats de maintenance",
+            "Pièces de rechange",
+            "Audit énergétique",
+            "Modernisation",
+            "Services digitaux"
+          ],
+          "required": false,
+          "order": 3
+        },
+        {
+          "id": "q_007_04",
+          "text": "Analyse par client (Client, Potentiel, Offre prioritaire, Besoin support)",
+          "type": "table",
+          "columns": [
+            {"name": "Client", "type": "text"},
+            {"name": "Potentiel", "type": "select", "options": ["Faible", "Moyen", "Fort", "Très Fort"]},
+            {"name": "Offre prioritaire", "type": "text"},
+            {"name": "Besoin support", "type": "text"}
+          ],
+          "rows": [],
+          "allowAddRows": true,
+          "allowRemoveRows": true,
+          "required": false,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "id": "theme_008",
+      "title": "Leviers commerciaux à mettre en place en 2027",
+      "description": "Identifier les actions concrètes pour vendre davantage de services",
+      "order": 8,
+      "questions": [
+        {
+          "id": "q_008_01",
+          "text": "Quelles actions vous aideraient concrètement à vendre davantage de services ? (Notation de 1 = Important à 5 = Pas Important)",
+          "type": "ranking",
+          "options": [
+            "Campagne contrats de maintenance",
+            "Campagne pièces de rechange",
+            "Campagne efficacité énergétique",
+            "Accompagnements clients",
+            "Journées portes ouvertes",
+            "Webinaires clients",
+            "Audits gratuits ciblés",
+            "Revues Installed Base",
+            "Emailing marketing",
+            "Cross-selling avec les projets"
+          ],
+          "required": false,
+          "order": 1
+        }
+      ]
+    },
+    {
+      "id": "theme_009",
+      "title": "Campagnes Services 2027 à construire",
+      "description": "Le commercial devient acteur du plan d'action",
+      "order": 9,
+      "questions": [
+        {
+          "id": "q_009_01",
+          "text": "Pièces de rechange - Quels clients présentent des risques d'obsolescence ?",
+          "type": "text",
+          "required": false,
+          "order": 1
+        },
+        {
+          "id": "q_009_02",
+          "text": "Pièces de rechange - Quels équipements arrivent à un âge critique ?",
+          "type": "text",
+          "required": false,
+          "order": 2
+        },
+        {
+          "id": "q_009_03",
+          "text": "Pièces de rechange - Quelles campagnes de remplacement seraient pertinentes ?",
+          "type": "text",
+          "required": false,
+          "order": 3
+        },
+        {
+          "id": "q_009_04",
+          "text": "Maintenance - Quels clients fonctionnent sans contrat ?",
+          "type": "text",
+          "required": false,
+          "order": 4
+        },
+        {
+          "id": "q_009_05",
+          "text": "Maintenance - Quels clients ont perdu leur contrat ?",
+          "type": "text",
+          "required": false,
+          "order": 5
+        },
+        {
+          "id": "q_009_06",
+          "text": "Maintenance - Quels clients ont une maintenance insuffisante ?",
+          "type": "text",
+          "required": false,
+          "order": 6
+        },
+        {
+          "id": "q_009_07",
+          "text": "Efficacité énergétique - Quels clients sont fortement consommateurs d'énergie ?",
+          "type": "text",
+          "required": false,
+          "order": 7
+        },
+        {
+          "id": "q_009_08",
+          "text": "Efficacité énergétique - Quels sites sont confrontés à l'augmentation du coût de l'électricité ?",
+          "type": "text",
+          "required": false,
+          "order": 8
+        },
+        {
+          "id": "q_009_09",
+          "text": "Efficacité énergétique - Quels clients ont des objectifs de décarbonation ?",
+          "type": "text",
+          "required": false,
+          "order": 9
+        },
+        {
+          "id": "q_009_10",
+          "text": "Modernisation - Où se situent les équipements de plus de 10 ou 15 ans ?",
+          "type": "text",
+          "required": false,
+          "order": 10
+        },
+        {
+          "id": "q_009_11",
+          "text": "Modernisation - Quels clients rencontrent des difficultés d'approvisionnement ?",
+          "type": "text",
+          "required": false,
+          "order": 11
+        }
+      ]
+    },
+    {
+      "id": "theme_010",
+      "title": "Construction du plan Services 2027",
+      "description": "Faire compléter cette grille pour construire le plan d'action",
+      "order": 10,
+      "questions": [
+        {
+          "id": "q_010_01",
+          "text": "Plan d'action détaillé (Sujet, Priorité, Gain estimé, Support demandé)",
+          "type": "table",
+          "columns": [
+            {"name": "Sujet", "type": "select", "options": ["Contrats", "Pièces", "Énergie", "Modernisation / Retrofit"]},
+            {"name": "Priorité", "type": "select", "options": ["Haute", "Moyenne", "Basse"]},
+            {"name": "Gain estimé", "type": "text"},
+            {"name": "Support demandé", "type": "text"}
+          ],
+          "rows": [],
+          "allowAddRows": true,
+          "allowRemoveRows": true,
+          "required": false,
+          "order": 1
+        }
+      ]
+    }
+  ],
+  "responseTypes": {
+    "text": {
+      "description": "Réponse en texte libre",
+      "validation": "string"
+    },
+    "number": {
+      "description": "Réponse numérique",
+      "validation": "number"
+    },
+    "boolean": {
+      "description": "Réponse oui/non",
+      "validation": "boolean"
+    },
+    "select": {
+      "description": "Choix unique parmi plusieurs options",
+      "validation": "string"
+    },
+    "multiselect": {
+      "description": "Sélection multiple parmi plusieurs options",
+      "validation": "array"
+    },
+    "checkbox": {
+      "description": "Cases à cocher (sélection multiple)",
+      "validation": "array"
+    },
+    "scale": {
+      "description": "Échelle de notation (ex: 1-5, 1-10)",
+      "validation": "number"
+    },
+    "ranking": {
+      "description": "Classement des options par ordre d'importance",
+      "validation": "object"
+    },
+    "table": {
+      "description": "Tableau avec colonnes et lignes",
+      "validation": "array"
+    }
+  }
+}

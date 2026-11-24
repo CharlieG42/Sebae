@@ -33,6 +33,9 @@ abstract final class BoxNames {
   // --- Module Produits techniques ---
   static const technicalProducts = 'technical_products';
 
+  // --- Module One2One ---
+  static const one2OneMeetings = 'one2one_meetings';
+
   static const all = [
     migrationFlags,
     ivs,
@@ -51,5 +54,6 @@ abstract final class BoxNames {
     wuectPompes,
     wuectSettings,
     technicalProducts,
+    one2OneMeetings,
   ];
 }

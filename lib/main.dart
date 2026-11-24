@@ -7,6 +7,7 @@ import 'modules/technical_products/services/technical_product_service.dart';
 import 'modules/wuect/services/wuect_legacy_migration.dart';
 import 'modules/wuect/services/wuect_migration_writer.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,9 @@ Future<void> main() async {
 
   // Configure la fenetre : maximisee (barre des taches visible, boutons de fenetre actifs)
   await windowManager.maximize();
+
+  // Initialise les données de locale françaises
+  await initializeDateFormatting('fr_FR');
 
   runApp(
     MultiProvider(

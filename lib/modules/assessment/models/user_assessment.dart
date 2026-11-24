@@ -28,7 +28,6 @@ class QuestionResponse extends Equatable {
     // On ne peut pas désérialiser Answer sans connaître le type de question
     // Cette méthode sera appelée avec le type de question
     final questionId = json['questionId'] as String;
-    final answerJson = json['answer'] as Map<String, dynamic>;
     final lastModified = DateTime.parse(json['lastModified'] as String);
     
     // Pour la désérialisation complète, utiliser fromJsonWithType
@@ -182,6 +181,9 @@ class ThemeResponse extends Equatable {
 }
 
 /// Assessment complet d'un utilisateur
+// Le statut, les réponses et les notes évoluent pendant l'assessment :
+// la contrainte d'immuabilité de [Equatable] ne s'applique pas ici.
+// ignore: must_be_immutable
 class UserAssessment extends Equatable {
   /// ID de l'utilisateur (IV)
   final String userId;

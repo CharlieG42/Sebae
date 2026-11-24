@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/question.dart';
 import '../models/question_type.dart';
-import '../models/theme.dart' as assessment_theme;
 import '../services/assessment_structure_service.dart';
 
 /// Dialogue d'édition d'une question

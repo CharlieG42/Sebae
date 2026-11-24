@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 import 'app.dart';
 import 'core/storage/hive_service.dart';
+import 'modules/assessment/assessment_module.dart';
 import 'modules/ssdm/services/ssdm_service.dart';
 import 'modules/technical_products/services/technical_product_service.dart';
 import 'modules/wuect/services/wuect_legacy_migration.dart';
@@ -30,11 +31,22 @@ Future<void> main() async {
   // Initialise les données de locale françaises
   await initializeDateFormatting('fr_FR');
 
+  // Services du module Assessment IV : structure (thématiques / questions)
+  // et réponses des utilisateurs. Initialisés avant runApp pour que les
+  // vues du module disposent des données dès leur ouverture.
+  final assessmentStructureService =
+      AssessmentModule.createStructureService();
+  await assessmentStructureService.init();
+  final assessmentUserService =
+      AssessmentModule.createAssessmentService(assessmentStructureService);
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SsdmService()),
         ChangeNotifierProvider(create: (_) => TechnicalProductService()),
+        ChangeNotifierProvider.value(value: assessmentStructureService),
+        ChangeNotifierProvider.value(value: assessmentUserService),
       ],
       child: const SebaeApp(),
     ),

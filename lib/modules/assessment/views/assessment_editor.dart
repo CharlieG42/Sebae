@@ -59,7 +59,7 @@ class _AssessmentEditorState extends State<AssessmentEditor> {
                   child: ListView.builder(
                     itemCount: themes.length,
                     itemBuilder: (context, index) {
-                      final theme = themes[index] as assessment_theme.Theme;
+                      final theme = themes[index];
                       final isSelected = _selectedThemeId == theme.id;
 
                       return ListTile(
@@ -109,7 +109,7 @@ class _AssessmentEditorState extends State<AssessmentEditor> {
     AssessmentStructureService service,
     String themeId,
   ) {
-    final theme = service.getTheme(themeId) as assessment_theme.Theme?;
+    final theme = service.getTheme(themeId);
     
     if (theme == null) {
       return const Center(child: Text('Thème non trouvé'));
@@ -276,7 +276,7 @@ class _AssessmentEditorState extends State<AssessmentEditor> {
     final themes = service.getAllThemes();
 
     // Créer une liste réorganisable
-    final reorderableList = List<assessment_theme.Theme>.from(themes.map((t) => t as assessment_theme.Theme));
+    final reorderableList = List<assessment_theme.Theme>.from(themes);
 
     return showDialog<void>(
       context: context,

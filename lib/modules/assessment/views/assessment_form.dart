@@ -27,7 +27,6 @@ class AssessmentForm extends StatefulWidget {
 
 class _AssessmentFormState extends State<AssessmentForm> {
   String? _currentThemeId;
-  int _currentThemeIndex = 0;
   String? _currentUserId;
   String? _currentAssessmentId;
   
@@ -89,7 +88,6 @@ class _AssessmentFormState extends State<AssessmentForm> {
       if (themes.isNotEmpty) {
         setState(() {
           _currentThemeId = themes.first.id;
-          _currentThemeIndex = 0;
         });
       }
     } catch (e) {
@@ -124,7 +122,7 @@ class _AssessmentFormState extends State<AssessmentForm> {
     }
 
     // Trouver le thème courant
-    final currentTheme = structureService.getTheme(_currentThemeId ?? themes.first.id) as assessment_theme.Theme?;
+    final currentTheme = structureService.getTheme(_currentThemeId ?? themes.first.id);
         
     return Scaffold(
       appBar: AppBar(
@@ -191,7 +189,7 @@ class _AssessmentFormState extends State<AssessmentForm> {
         scrollDirection: Axis.horizontal,
         itemCount: themes.length,
         itemBuilder: (ctx, index) {
-          final theme = themes[index] as assessment_theme.Theme;
+          final theme = themes[index];
           final isCurrent = theme.id == currentTheme?.id;
           
           // Obtenir le pourcentage de complétion pour ce thème
@@ -336,7 +334,6 @@ class _AssessmentFormState extends State<AssessmentForm> {
   void _selectTheme(String themeId, int index) {
     setState(() {
       _currentThemeId = themeId;
-      _currentThemeIndex = index;
     });
   }
 
@@ -350,7 +347,7 @@ class _AssessmentFormState extends State<AssessmentForm> {
       int answeredCount = 0;
       
       for (final theme in themes) {
-        final stats = _getThemeStats(theme as assessment_theme.Theme);
+        final stats = _getThemeStats(theme);
         totalQuestions += stats.totalQuestions;
         answeredCount += stats.answeredCount;
       }
@@ -405,7 +402,7 @@ class _AssessmentFormState extends State<AssessmentForm> {
   Future<void> _saveResponse(Question question, Answer answer) async {
     if (_currentUserId == null || _currentAssessmentId == null) return;
     
-    final theme = _structureService.getThemeByQuestion(question.id) as assessment_theme.Theme?;
+    final theme = _structureService.getThemeByQuestion(question.id);
     
     if (theme == null) return;
     
@@ -426,7 +423,7 @@ class _AssessmentFormState extends State<AssessmentForm> {
       final questionId = entry.key;
       final answer = entry.value;
       
-      final theme = _structureService.getThemeByQuestion(questionId) as assessment_theme.Theme?;
+      final theme = _structureService.getThemeByQuestion(questionId);
       if (theme != null) {
         await _assessmentService.saveQuestionResponse(
           userId: _currentUserId!,
@@ -450,12 +447,12 @@ class _AssessmentFormState extends State<AssessmentForm> {
     final themes = _structureService.getAllThemes();
     final totalQuestions = themes.fold(
       0,
-      (sum, theme) => sum + (theme as assessment_theme.Theme).questions.length,
+      (sum, theme) => sum + theme.questions.length,
     );
     
     int answeredCount = 0;
     for (final theme in themes) {
-      final stats = _getThemeStats(theme as assessment_theme.Theme);
+      final stats = _getThemeStats(theme);
       answeredCount += stats.answeredCount;
     }
     
@@ -526,8 +523,8 @@ class _AssessmentFormState extends State<AssessmentForm> {
             children: [
               for (final theme in themes)
                 ListTile(
-                  title: Text((theme as assessment_theme.Theme).title),
-                  subtitle: Text('${_getThemeStats(theme).answeredCount}/${(theme as assessment_theme.Theme).questions.length} réponses'),
+                  title: Text(theme.title),
+                  subtitle: Text('${_getThemeStats(theme).answeredCount}/${theme.questions.length} réponses'),
                   trailing: Text('${_getThemeStats(theme).completionPercentage.toStringAsFixed(0)}%'),
                 ),
             ],
@@ -548,8 +545,8 @@ class _AssessmentFormState extends State<AssessmentForm> {
 extension AssessmentStructureExtensions on AssessmentStructureService {
   assessment_theme.Theme? getThemeByQuestion(String questionId) {
     for (final theme in getAllThemes()) {
-      if ((theme as assessment_theme.Theme).hasQuestion(questionId)) {
-        return theme as assessment_theme.Theme?;
+      if (theme.hasQuestion(questionId)) {
+        return theme;
       }
     }
     return null;

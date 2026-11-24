@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../assessment_module.dart';
 import '../services/assessment_structure_service.dart';
 import '../services/user_assessment_service.dart';
+import 'assessment_editor.dart';
+import 'assessment_form.dart';
 
 /// Page principale du module Assessment
 class AssessmentHome extends StatefulWidget {
@@ -86,9 +88,10 @@ class _AssessmentHomeState extends State<AssessmentHome> {
                 // Bouton: Créer un nouvel assessment
                 ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      AssessmentModule.formRoute,
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const AssessmentForm(),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.add),
@@ -109,9 +112,10 @@ class _AssessmentHomeState extends State<AssessmentHome> {
                 // Bouton: Gérer la structure (admin)
                 OutlinedButton.icon(
                   onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      AssessmentModule.editorRoute,
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const AssessmentEditor(),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.edit),

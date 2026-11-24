@@ -31,6 +31,8 @@ class _QuestionEditorDialogState extends State<QuestionEditorDialog> {
   late TextEditingController _minController;
   late TextEditingController _maxController;
   late TextEditingController _orderController;
+  late TextEditingController _minSelController;
+  late TextEditingController _maxSelController;
   late bool _required;
   
   // Pour les types avec options
@@ -52,6 +54,12 @@ class _QuestionEditorDialogState extends State<QuestionEditorDialog> {
     _minController = TextEditingController(text: widget.question?.min?.toString() ?? '');
     _maxController = TextEditingController(text: widget.question?.max?.toString() ?? '');
     _orderController = TextEditingController(text: widget.question?.order.toString() ?? '');
+    _minSelController = TextEditingController(
+      text: widget.question?.minSelections?.toString() ?? '',
+    );
+    _maxSelController = TextEditingController(
+      text: widget.question?.maxSelections?.toString() ?? '',
+    );
     _required = widget.question?.required ?? false;
     
     // Initialiser les options
@@ -90,6 +98,8 @@ class _QuestionEditorDialogState extends State<QuestionEditorDialog> {
     _minController.dispose();
     _maxController.dispose();
     _orderController.dispose();
+    _minSelController.dispose();
+    _maxSelController.dispose();
     for (final controller in _optionControllers) {
       controller.dispose();
     }
@@ -191,6 +201,34 @@ class _QuestionEditorDialogState extends State<QuestionEditorDialog> {
                       _optionControllers.add(TextEditingController());
                     });
                   },
+                ),
+                const SizedBox(height: 12),
+
+                // Nombre de réponses autorisées (choix multiple / cases à cocher)
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _minSelController,
+                        decoration: const InputDecoration(
+                          labelText: 'Sélections min',
+                          hintText: 'Ex: 0',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _maxSelController,
+                        decoration: const InputDecoration(
+                          labelText: 'Sélections max',
+                          hintText: '0 = illimité',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
               ],
@@ -368,6 +406,8 @@ class _QuestionEditorDialogState extends State<QuestionEditorDialog> {
                   maxLength: _maxLengthController.text.isNotEmpty 
                       ? int.parse(_maxLengthController.text) 
                       : null,
+                  minSelections: _selectionsFrom(_minSelController),
+                  maxSelections: _selectionsFrom(_maxSelController),
                 );
               } else {
                 await service.updateQuestion(
@@ -392,6 +432,8 @@ class _QuestionEditorDialogState extends State<QuestionEditorDialog> {
                   maxLength: _maxLengthController.text.isNotEmpty 
                       ? int.parse(_maxLengthController.text) 
                       : null,
+                  minSelections: _selectionsFrom(_minSelController),
+                  maxSelections: _selectionsFrom(_maxSelController),
                 );
               }
 
@@ -429,6 +471,13 @@ class _QuestionEditorDialogState extends State<QuestionEditorDialog> {
   }
 
   /// Vérifier si le type nécessite des options
+  /// Lit un nombre de sélections saisi (null si vide ou invalide).
+  int? _selectionsFrom(TextEditingController controller) {
+    final text = controller.text.trim();
+    if (text.isEmpty) return null;
+    return int.tryParse(text);
+  }
+
   bool _needsOptions(QuestionType type) {
     return switch (type) {
       QuestionType.select ||

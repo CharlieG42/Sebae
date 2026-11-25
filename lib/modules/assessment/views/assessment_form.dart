@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
+import '../../../shared/models/iv.dart';
+import '../../../core/storage/box_names.dart';
 import '../services/assessment_structure_service.dart';
 import '../services/user_assessment_service.dart';
 import '../models/theme.dart' as assessment_theme;
@@ -29,6 +31,11 @@ class _AssessmentFormState extends State<AssessmentForm> {
   String? _currentThemeId;
   String? _currentUserId;
   String? _currentAssessmentId;
+  String _ivName = '';
+  String? _selectedIvId;
+  DateTime _assessmentDate = DateTime.now();
+  List<Iv> _ivs = [];
+  bool _isLoadingIVs = true;
   
   // Services (stocker pour éviter les context.read dans les callbacks)
   late AssessmentStructureService _structureService;
@@ -63,6 +70,8 @@ class _AssessmentFormState extends State<AssessmentForm> {
         );
         if (assessment != null) {
           _currentAssessmentId = assessment.assessmentId;
+          _ivName = assessment.ivName;
+          _assessmentDate = assessment.assessmentDate;
           // Charger les réponses existantes
           for (final themeResponse in assessment.themeResponses) {
             for (final questionResponse in themeResponse.responses) {
@@ -79,6 +88,8 @@ class _AssessmentFormState extends State<AssessmentForm> {
         // Créer un nouvel assessment
         final assessment = await userService.createAssessment(
           userId: _currentUserId!,
+          ivName: _ivName,
+          assessmentDate: _assessmentDate,
         );
         _currentAssessmentId = assessment.assessmentId;
       }
@@ -90,6 +101,23 @@ class _AssessmentFormState extends State<AssessmentForm> {
           _currentThemeId = themes.first.id;
         });
       }
+      
+      // Charger la liste des IV depuis Hive
+      await _loadIVs();
+      
+      // Si un nom d'IV est déjà défini, trouver son ID
+      if (_ivName.isNotEmpty) {
+        try {
+          final iv = _ivs.firstWhere((iv) => iv.name == _ivName);
+          _selectedIvId = iv.id;
+        } catch (_) {
+          // IV non trouvé, laisser _selectedIvId à null
+        }
+      }
+      
+      setState(() {
+        _isLoadingIVs = false;
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -167,6 +195,10 @@ class _AssessmentFormState extends State<AssessmentForm> {
       ),
       body: Column(
         children: [
+          // Informations de l'assessment (nom IV et date)
+          _buildAssessmentInfoHeader(),
+          const Divider(height: 1),
+          
           // Navigation entre les thèmes
           _buildThemeNavigation(themes, currentTheme),
           const Divider(height: 1),
@@ -178,6 +210,129 @@ class _AssessmentFormState extends State<AssessmentForm> {
         ],
       ),
       bottomNavigationBar: _buildBottomNavigation(context, themes, currentTheme),
+    );
+  }
+
+  /// Charger la liste des IV depuis Hive
+  Future<void> _loadIVs() async {
+    try {
+      final ivBox = Hive.box<Iv>(BoxNames.ivs);
+      _ivs = ivBox.values.where((iv) => iv.active).cast<Iv>().toList();
+      
+      // Trier par nom
+      _ivs.sort((a, b) => a.name.compareTo(b.name));
+    } catch (e) {
+      debugPrint('Erreur lors du chargement des IV: $e');
+      _ivs = [];
+    }
+  }
+
+  /// Construit l'en-tête avec les informations de l'assessment
+  Widget _buildAssessmentInfoHeader() {
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _isLoadingIVs
+                      ? const SizedBox(
+                          height: 56,
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: 'Nom de l\'IV',
+                            hintText: 'Sélectionnez un IV',
+                            border: OutlineInputBorder(),
+                          ),
+                          value: _selectedIvId,
+                          items: _ivs.map((Iv iv) {
+                            return DropdownMenuItem<String>(
+                              value: iv.id,
+                              child: Text(iv.name),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              try {
+                                final selectedIv = _ivs.firstWhere(
+                                  (iv) => iv.id == newValue,
+                                );
+                                setState(() {
+                                  _selectedIvId = newValue;
+                                  _ivName = selectedIv.name;
+                                });
+                                _saveAssessmentMetadata();
+                              } catch (_) {
+                                // IV non trouvé
+                              }
+                            }
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Veuillez sélectionner un IV';
+                            }
+                            return null;
+                          },
+                        ),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.calendar_today, size: 18),
+                  label: Text(
+                    '${_assessmentDate.day}/${_assessmentDate.month}/${_assessmentDate.year}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  onPressed: _selectDate,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Sélectionner la date de l'assessment
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _assessmentDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      locale: const Locale('fr'),
+    );
+    
+    if (picked != null && picked != _assessmentDate) {
+      setState(() {
+        _assessmentDate = picked;
+      });
+      await _saveAssessmentMetadata();
+    }
+  }
+
+  /// Sauvegarder les métadonnées de l'assessment (nom IV et date)
+  Future<void> _saveAssessmentMetadata() async {
+    if (_currentUserId == null || _currentAssessmentId == null) return;
+    
+    await _assessmentService.updateIvName(
+      userId: _currentUserId!,
+      assessmentId: _currentAssessmentId!,
+      ivName: _ivName,
+    );
+    
+    await _assessmentService.updateAssessmentDate(
+      userId: _currentUserId!,
+      assessmentId: _currentAssessmentId!,
+      assessmentDate: _assessmentDate,
     );
   }
 
@@ -197,46 +352,58 @@ class _AssessmentFormState extends State<AssessmentForm> {
 
           return GestureDetector(
             onTap: () => _selectTheme(theme.id, index),
-            child: Container(
-              width: 120,
-              margin: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: isCurrent 
-                    ? Theme.of(ctx).primaryColor 
-                    : Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minWidth: 140,
+                maxWidth: 200,
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    theme.title,
-                    style: TextStyle(
-                      color: isCurrent ? Colors.white : Colors.black,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: isCurrent 
+                      ? Theme.of(ctx).primaryColor 
+                      : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: Text(
+                        theme.title,
+                        style: TextStyle(
+                          color: isCurrent ? Colors.white : Colors.black,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  LinearProgressIndicator(
-                    value: themeStats.completionPercentage / 100,
-                    backgroundColor: Colors.grey[400],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isCurrent ? Colors.white : Theme.of(ctx).primaryColor,
+                    const SizedBox(height: 2),
+                    SizedBox(
+                      width: double.infinity,
+                      child: LinearProgressIndicator(
+                        value: themeStats.completionPercentage / 100,
+                        backgroundColor: Colors.grey[400],
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          isCurrent ? Colors.white : Theme.of(ctx).primaryColor,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${themeStats.answeredCount}/${themeStats.totalQuestions}',
-                    style: TextStyle(
-                      color: isCurrent ? Colors.white : Colors.black,
-                      fontSize: 10,
+                    const SizedBox(height: 2),
+                    Text(
+                      '${themeStats.answeredCount}/${themeStats.totalQuestions}',
+                      style: TextStyle(
+                        color: isCurrent ? Colors.white : Colors.black,
+                        fontSize: 10,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -419,6 +586,10 @@ class _AssessmentFormState extends State<AssessmentForm> {
   Future<void> _saveAll() async {
     if (_currentUserId == null || _currentAssessmentId == null) return;
     
+    // Sauvegarder les métadonnées d'abord
+    await _saveAssessmentMetadata();
+    
+    // Sauvegarder toutes les réponses
     for (final entry in _tempAnswers.entries) {
       final questionId = entry.key;
       final answer = entry.value;
@@ -437,7 +608,7 @@ class _AssessmentFormState extends State<AssessmentForm> {
     
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Réponses sauvegardées !')),
+        const SnackBar(content: Text('Réponses et informations sauvegardées !')),
       );
     }
   }
@@ -466,6 +637,12 @@ class _AssessmentFormState extends State<AssessmentForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_ivName.isNotEmpty) ...[
+              Text('Assessment pour: $_ivName', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+            ],
+            Text('Date: ${_assessmentDate.day}/${_assessmentDate.month}/${_assessmentDate.year}'),
+            const SizedBox(height: 8),
             Text('Vous avez répondu à $answeredCount des $totalQuestions questions.'),
             if (unansweredCount > 0) ...[
               const SizedBox(height: 8),

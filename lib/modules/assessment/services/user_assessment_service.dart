@@ -47,12 +47,16 @@ class UserAssessmentService extends ChangeNotifier {
   Future<UserAssessment> createAssessment({
     required String userId,
     String? assessmentId,
+    String? ivName,
+    DateTime? assessmentDate,
     AssessmentStatus status = AssessmentStatus.in_progress,
     String? notes,
   }) async {
     final assessment = UserAssessment(
       userId: userId,
       assessmentId: assessmentId,
+      ivName: ivName,
+      assessmentDate: assessmentDate,
       status: status,
       notes: notes,
     );
@@ -115,7 +119,7 @@ class UserAssessmentService extends ChangeNotifier {
     }
     
     // Trier par date (plus récent en premier)
-    assessments.sort((a, b) => b.date.compareTo(a.date));
+    assessments.sort((a, b) => b.assessmentDate.compareTo(a.assessmentDate));
     
     return assessments;
   }
@@ -145,7 +149,7 @@ class UserAssessmentService extends ChangeNotifier {
     }
     
     // Trier par date (plus récent en premier)
-    assessments.sort((a, b) => b.date.compareTo(a.date));
+    assessments.sort((a, b) => b.assessmentDate.compareTo(a.assessmentDate));
     
     return assessments;
   }
@@ -486,6 +490,50 @@ class UserAssessmentService extends ChangeNotifier {
     }
 
     return summary;
+  }
+
+  /// Mettre à jour le nom de l'IV pour un assessment
+  Future<bool> updateIvName({
+    required String userId,
+    required String assessmentId,
+    required String ivName,
+  }) async {
+    final assessment = await loadAssessment(
+      userId: userId,
+      assessmentId: assessmentId,
+    );
+
+    if (assessment == null) {
+      return false;
+    }
+
+    final updatedAssessment = assessment.setIvName(ivName);
+    await _saveAssessment(updatedAssessment);
+    notifyListeners();
+
+    return true;
+  }
+  
+  /// Mettre à jour la date de l'assessment
+  Future<bool> updateAssessmentDate({
+    required String userId,
+    required String assessmentId,
+    required DateTime assessmentDate,
+  }) async {
+    final assessment = await loadAssessment(
+      userId: userId,
+      assessmentId: assessmentId,
+    );
+
+    if (assessment == null) {
+      return false;
+    }
+
+    final updatedAssessment = assessment.setAssessmentDate(assessmentDate);
+    await _saveAssessment(updatedAssessment);
+    notifyListeners();
+
+    return true;
   }
 
   /// Exporter les réponses d'un assessment en JSON

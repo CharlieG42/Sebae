@@ -191,8 +191,11 @@ class UserAssessment extends Equatable {
   /// ID de l'assessment
   final String assessmentId;
   
-  /// Date de création
-  final DateTime date;
+  /// Nom de l'IV (Interview Visuelle)
+  String ivName;
+  
+  /// Date de création de l'assessment
+  DateTime assessmentDate;
   
   /// Statut de l'assessment
   AssessmentStatus status;
@@ -206,18 +209,21 @@ class UserAssessment extends Equatable {
   UserAssessment({
     String? assessmentId,
     required this.userId,
-    DateTime? date,
+    String? ivName,
+    DateTime? assessmentDate,
     this.status = AssessmentStatus.in_progress,
     this.themeResponses = const [],
     this.notes,
   }) : assessmentId = assessmentId ?? const Uuid().v4(),
-       date = date ?? DateTime.now();
+       ivName = ivName ?? '',
+       assessmentDate = assessmentDate ?? DateTime.now();
 
   @override
   List<Object?> get props => [
     userId,
     assessmentId,
-    date,
+    ivName,
+    assessmentDate,
     status,
     themeResponses,
     notes,
@@ -242,7 +248,12 @@ class UserAssessment extends Equatable {
     return UserAssessment(
       assessmentId: json['assessmentId'] as String?,
       userId: json['userId'] as String,
-      date: DateTime.parse(json['date'] as String),
+      ivName: json['ivName'] as String? ?? '',
+      assessmentDate: json['assessmentDate'] != null 
+          ? DateTime.parse(json['assessmentDate'] as String) 
+          : (json['date'] != null 
+              ? DateTime.parse(json['date'] as String) 
+              : DateTime.now()),
       status: AssessmentStatusExtension.fromJson(json['status'] as String),
       themeResponses: themeResponses,
       notes: json['notes'] as String?,
@@ -253,7 +264,8 @@ class UserAssessment extends Equatable {
     return {
       'userId': userId,
       'assessmentId': assessmentId,
-      'date': date.toIso8601String(),
+      'ivName': ivName,
+      'assessmentDate': assessmentDate.toIso8601String(),
       'status': status.toJson(),
       'themeResponses': themeResponses.map((tr) => tr.toJson()).toList(),
       if (notes != null) 'notes': notes,
@@ -263,7 +275,8 @@ class UserAssessment extends Equatable {
   UserAssessment copyWith({
     String? userId,
     String? assessmentId,
-    DateTime? date,
+    String? ivName,
+    DateTime? assessmentDate,
     AssessmentStatus? status,
     List<ThemeResponse>? themeResponses,
     String? notes,
@@ -271,7 +284,8 @@ class UserAssessment extends Equatable {
     return UserAssessment(
       assessmentId: assessmentId ?? this.assessmentId,
       userId: userId ?? this.userId,
-      date: date ?? this.date,
+      ivName: ivName ?? this.ivName,
+      assessmentDate: assessmentDate ?? this.assessmentDate,
       status: status ?? this.status,
       themeResponses: themeResponses ?? this.themeResponses,
       notes: notes ?? this.notes,
@@ -366,6 +380,16 @@ class UserAssessment extends Equatable {
 
   /// Vérifier si l'assessment est revu
   bool get isReviewed => status == AssessmentStatus.reviewed;
+  
+  /// Mettre à jour le nom de l'IV
+  UserAssessment setIvName(String name) {
+    return copyWith(ivName: name);
+  }
+  
+  /// Mettre à jour la date de l'assessment
+  UserAssessment setAssessmentDate(DateTime date) {
+    return copyWith(assessmentDate: date);
+  }
 
   /// Obtenir le nombre total de réponses
   int get totalResponseCount {
@@ -383,5 +407,5 @@ class UserAssessment extends Equatable {
   }
 
   @override
-  String toString() => 'UserAssessment($userId, $assessmentId, $status)';
+  String toString() => 'UserAssessment($userId, $assessmentId, $ivName, $assessmentDate, $status)';
 }
